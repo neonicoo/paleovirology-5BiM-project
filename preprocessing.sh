@@ -1,4 +1,3 @@
-#!/usr/bin/bash
 #!/bin/bash
 
 #preprocessing.sh
