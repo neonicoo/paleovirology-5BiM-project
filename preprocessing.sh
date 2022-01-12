@@ -1,4 +1,6 @@
+#!/usr/bin/bash
 #!/bin/bash
+
 #preprocessing.sh
 
 # Authors: Adrian Zurmely - Maelle Broustal - Nicolas Mendiboure INSA Lyon 5BIM
