@@ -42,3 +42,11 @@ makeblastdb -dbtype prot \
         -in viral.4.protein.faa \
         -out viral.4.protein \
         -title 'Virus Refseq Protein 4'
+        
+        
+        
+# Create an alias for the 4 DB :
+blastdb_aliastool -dblist "viral.1.protein viral.2.protein viral.3.protein viral.4.protein" \
+		-dbtype prot \
+		-out viral.protein.all \
+		-title "Viral Protein All"
