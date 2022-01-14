@@ -1,4 +1,5 @@
 #!/bin/bash
+
 #preprocessing.sh
 
 # Authors: Adrian Zurmely - Maelle Broustal - Nicolas Mendiboure INSA Lyon 5BIM
@@ -77,7 +78,7 @@ if [ "$siRNA" = true ]; then
 	  f=$(basename $f .fastq)
 	  echo "Processing $f file..."
 	  # take action on each file. $f store current file name
-	  cutadapt -m 1 -q 30 -a $ADAPT_ILLUMINA_siRNA -a $ADAPT_ILLUMINA_siRNA_RC -o trimmed_cutadapt/${f}_trimmed.fastq  $FILES/$f.fastq > log/cutadapt_$f.txt
+	  cutadapt -m 10 -q 30 -a $ADAPT_ILLUMINA_siRNA -a $ADAPT_ILLUMINA_siRNA_RC -o trimmed_cutadapt/${f}_trimmed.fastq  $FILES/$f.fastq > log/cutadapt_$f.txt
 	done
 
 	#fastqc
@@ -127,7 +128,7 @@ if [ "$VANA" = true ]; then
 	  namefileR2=${namefileR1/R1/R2}
 	  #echo "R2 = ${namefileR2/R1/R2}"
 	  echo "Processing $namefileR1 and $namefileR2 pair-end files..."
-	  cutadapt -m 5 -q 30 -u 24 -U 24 -a $ADAPT_R1 -a $ADAPT_RC_R1 -A $ADAPT_R2 -A $ADAPT_RC_R2 -o trimmed_cutadapt/${namefileR1}_trimmed.fastq -p trimmed_cutadapt/${namefileR2}_trimmed.fastq $FILES/$namefileR1.fastq $FILES/$namefileR2.fastq > log/cutadapt_$namefileR1.txt
+	  cutadapt -m 20 -q 30 -u 24 -U 24 -a $ADAPT_R1 -a $ADAPT_RC_R1 -A $ADAPT_R2 -A $ADAPT_RC_R2 -o trimmed_cutadapt/${namefileR1}_trimmed.fastq -p trimmed_cutadapt/${namefileR2}_trimmed.fastq $FILES/$namefileR1.fastq $FILES/$namefileR2.fastq > log/cutadapt_$namefileR1.txt
 	done
 	#fastqc
 	fastqc -t 6 trimmed_cutadapt/*_trimmed.fastq -o QC/fastqc > log/fastqc_post.txt

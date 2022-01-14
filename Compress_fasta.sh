@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 
 # Authors: Linux de Folis / Denis Filloux - CIRAD - UMR PHIM - 2021
 
