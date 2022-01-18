@@ -18,6 +18,7 @@ blast.columns = ["query_seqid",
 				"evalue",
 				"bitscore"]
 
+
 virus = pd.read_table(sys.argv[2], header = None)
 virus.columns = ["seqid",
 				"length",
@@ -27,6 +28,7 @@ virus.columns = ["seqid",
 				"order",
 				"autority"]
 
+output = sys.argv[3]
 
 sseqid = list(blast["subject_seqid"].values)
 sname = []
@@ -35,6 +37,6 @@ for s in sseqid:
 
     
 blast.insert(2,'subject_name', sname)
-blast.to_csv("./blast_virus", header=True, sep='\t')
+blast.to_csv("./"+str(output)+".txt", header=True, sep='\t')
 
 print("######## DONE #######")
