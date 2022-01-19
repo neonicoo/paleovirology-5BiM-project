@@ -40,5 +40,3 @@ for s in sseqid:
 blast.insert(2,'#subject_species', sname)
 blast.insert(3,'#subject_genus', sgenus)
 blast.to_csv("./"+str(output)+".txt", header=True, sep='\t')
-
-print("######## DONE #######")
