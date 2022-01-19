@@ -39,12 +39,12 @@ while [ -n "$1" ]; do # while loop starts
 
 					if [[ -s $2.blastn.txt ]]
 					then 
-						python3 ./virus_identify.py $2.blastn.txt $4 $2.blastn.taxon
+						python3 ./blastn_virus_identify.py $2.blastn.txt $4 $2.blastn.taxon
 					fi
 
 					if [[ -s $2.blastx.txt ]]
 					then 
-						python3 ./virus_identify.py $2.blastx.txt $4 $2.blastx.taxon
+						python3 ./blastx_virus_identify.py $2.blastx.txt $4 $2.blastx.taxon
 					fi
 
 					echo "#### DONE ####"
