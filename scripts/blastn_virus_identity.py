@@ -19,7 +19,7 @@ blastn.columns = ["#query_seqid",
 				"#bitscore"]
 
 
-virus = pd.read_table(sys.argv[2], header = None)
+virus = pd.read_table(str(sys.argv[2])+"vrl_genbank.info", header = None)
 virus.columns = ["#seqid",
 				"#length",
 				"#genus",

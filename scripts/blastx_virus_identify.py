@@ -4,7 +4,7 @@ import pandas as pd
 import sys 
 import os
 
-blastx = pd.read_table("./contigs_bbmap.blastx.txt", header = None)
+blastx = pd.read_table(sys.argv[1], header = None)
 blastx.columns = ["#query_seqid",
 				"#subject_idmapping",
 				"#perc_ident",
@@ -19,11 +19,11 @@ blastx.columns = ["#query_seqid",
 				"#bitscore"]
 
 
-virus_mapp = pd.read_table("./plant_239_U100/vrl_idmapping", header = None)
+virus_mapp = pd.read_table(str(sys.argv[2])+"vrl_idmapping", header = None)
 virus_mapp.columns = ["#seqid",
 					"#idmapping"]
 
-virus_gff = pd.read_table("./plant_239_U100/vrl_genbank.info", header = None)
+virus_gff = pd.read_table(str(sys.argv[2])+"vrl_genbank.info", header = None)
 virus_gff.columns = ["#seqid",
 					"#length",
 					"#genus",
