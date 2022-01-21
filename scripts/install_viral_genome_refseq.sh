@@ -1,10 +1,15 @@
-#!/bin/bash
+#!/bin/bash -i
+
+mkdir seqref
+cd seqref
+
+conda activate paleogenomic
 
 # get annotations
-wget ftp://ftp.ncbi.nlm.nih.gov/refseq/release/viral/viral.1.genomic.gbff.gz
-wget ftp://ftp.ncbi.nlm.nih.gov/refseq/release/viral/viral.2.genomic.gbff.gz
-wget ftp://ftp.ncbi.nlm.nih.gov/refseq/release/viral/viral.3.genomic.gbff.gz
-wget ftp://ftp.ncbi.nlm.nih.gov/refseq/release/viral/viral.4.genomic.gbff.gz
+wget https://ftp.ncbi.nlm.nih.gov/refseq/release/viral/viral.1.genomic.gbff.gz
+wget https://ftp.ncbi.nlm.nih.gov/refseq/release/viral/viral.2.genomic.gbff.gz
+wget https://ftp.ncbi.nlm.nih.gov/refseq/release/viral/viral.3.genomic.gbff.gz
+wget https://ftp.ncbi.nlm.nih.gov/refseq/release/viral/viral.4.genomic.gbff.gz
 gunzip viral.1.genomic.gbff.gz
 gunzip viral.2.genomic.gbff.gz
 gunzip viral.3.genomic.gbff.gz
@@ -43,3 +48,5 @@ makeblastdb -dbtype nucl \
         -in viral.4.1.genomic.fna \
         -out viral.4.1.genomic \
         -title 'Virus Refseq Genomic 4'
+
+conda deactivate

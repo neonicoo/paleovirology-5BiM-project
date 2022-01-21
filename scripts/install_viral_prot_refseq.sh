@@ -1,10 +1,16 @@
-#!/bin/bash
+#!/bin/bash -i
+
+
+mkdir seqref
+cd seqref
+
+conda activate paleogenomic
 
 # get annotations
-wget ftp://ftp.ncbi.nlm.nih.gov/refseq/release/viral/viral.1.protein.gpff.gz
-wget ftp://ftp.ncbi.nlm.nih.gov/refseq/release/viral/viral.2.protein.gpff.gz
-wget ftp://ftp.ncbi.nlm.nih.gov/refseq/release/viral/viral.3.protein.gpff.gz
-wget ftp://ftp.ncbi.nlm.nih.gov/refseq/release/viral/viral.4.protein.gpff.gz
+wget https://ftp.ncbi.nlm.nih.gov/refseq/release/viral/viral.1.protein.gpff.gz
+wget https://ftp.ncbi.nlm.nih.gov/refseq/release/viral/viral.2.protein.gpff.gz
+wget https://ftp.ncbi.nlm.nih.gov/refseq/release/viral/viral.3.protein.gpff.gz
+wget https://ftp.ncbi.nlm.nih.gov/refseq/release/viral/viral.4.protein.gpff.gz
 gunzip viral.1.protein.gpff.gz
 gunzip viral.2.protein.gpff.gz
 gunzip viral.3.protein.gpff.gz
@@ -50,3 +56,5 @@ blastdb_aliastool -dblist "viral.1.protein viral.2.protein viral.3.protein viral
 		-dbtype prot \
 		-out viral.protein.all \
 		-title "Viral Protein All"
+
+conda deactivate
