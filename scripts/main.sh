@@ -5,25 +5,31 @@
 ##################################### Initial settings  ######################################
 ##############################################################################################
 
-mkdir plant_239_U100
-cd plant_239_U100
+if [ -d ${SCRIPT_DIR}/data/siRNA ] 
+then
+    :
+else
+    mkdir plant_239_U100
+	cd plant_239_U100
 
-wget bioinfo.bti.cornell.edu/ftp/program/VirusDetect/virus_database/v239/U100/plant_239_U100.tar.gz
-tar -xzvf plant_239_U100.tar.gz --strip-components=1
+	wget bioinfo.bti.cornell.edu/ftp/program/VirusDetect/virus_database/v239/U100/plant_239_U100.tar.gz
+	tar -xzvf plant_239_U100.tar.gz --strip-components=1
 
-wget bioinfo.bti.cornell.edu/ftp/program/VirusDetect/virus_database/v239/vrl_genbank.info.gz
-tar -xzvf vrl_genbank.info.gz --strip-components=1
-wget bioinfo.bti.cornell.edu/ftp/program/VirusDetect/virus_database/v239/vrl_idmapping.gz
-tar -xzvf vrl_idmapping.gz --strip-components=1
-rm -rf plant_239_U100.tar.gz  vrl_genbank.info.gzvrl_idmapping.gz
-cd ..
+	wget bioinfo.bti.cornell.edu/ftp/program/VirusDetect/virus_database/v239/vrl_genbank.info.gz
+	tar -xzvf vrl_genbank.info.gz --strip-components=1
+	wget bioinfo.bti.cornell.edu/ftp/program/VirusDetect/virus_database/v239/vrl_idmapping.gz
+	tar -xzvf vrl_idmapping.gz --strip-components=1
+	rm -rf plant_239_U100.tar.gz  vrl_genbank.info.gzvrl_idmapping.gz
+	cd ..
+fi
+
 
 if conda env list | grep -q paleogenomic
 then
    conda activate paleogenomic
    echo "paleogenomic conda env ON"
 else 
-   	echo "Installing conda env" 
+	echo "Installing conda env" 
 	conda env create --file paleogenomic.yml
 	conda clean -a
 	conda activate paleogenomic
