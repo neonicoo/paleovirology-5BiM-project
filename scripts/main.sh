@@ -5,7 +5,10 @@
 ##################################### Initial settings  ######################################
 ##############################################################################################
 
-if [ -d ${SCRIPT_DIR}/data/siRNA ] 
+# donne le repertoire du script : 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+if [ -d ${SCRIPT_DIR}/plant_239_U100 ] 
 then
     :
 else
@@ -46,9 +49,6 @@ fi
 # QC : multiqc/ multiqc_report.html et fastqc/
 # QC/fastqc --> même nom.fastq.html : avant trimming ; _trimmed.html : après trimming 
  
-
-# donne le repertoire du script : 
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 if [ -d ${SCRIPT_DIR}/data/siRNA ] 
 then
