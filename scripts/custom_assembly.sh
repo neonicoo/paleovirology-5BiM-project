@@ -64,7 +64,6 @@ esac
 	# spades.py -o output/ -1 Forward_R1.fastq -2 Reverse_R1.fastq
 	
 
-	
 if [ "$VANA" = true ]; then
 	echo "Assembling VANA data"
 	FILES_FA="$SCRIPT_DIR/VANA/trimmed_cutadapt/"
@@ -86,9 +85,14 @@ if [ "$VANA" = true ]; then
 	  
 	  # on fait le bbmap/repair
 	  bash ~/scripts/bbmap/repair.sh in=$FILES_FA/$namefileR1.fastq in2=$FILES_FA/$namefileR2.fastq out1=$FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq out2=$FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq outs=$FILES_FA/$namefileR1/$namefileR1.unpaired.fastq
-	  # lance spades : 
-	  spades.py -o outputMETA/ -1 $FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq -2 $FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq -s $FILES_FA/$namefileR1/$namefileR1.unpaired.fastq --meta
 	  
+	  #SI $FILES_FA/$namefileR1/$namefileR1.unpaired.fastq est vide : spades va bugger 
+	  if [ -s $FILES_FA/$namefileR1/$namefileR1.unpaired.fastq ]; then
+		# lance spades : 
+		spades.py -o outputMETA/ -1 $FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq -2 $FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq -s $FILES_FA/$namefileR1/$namefileR1.unpaired.fastq --meta
+	  else
+		spades.py -o outputMETA/ -1 $FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq -2 $FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq --meta
+	  fi
 	  #pour idba_ud on merge 1 et 2 en un seul fichier sans les unpaired :
 	  fq2fa --merge $FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq $FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq $FILES_FA/$namefileR1/$namefileR1.mergedR1-R2.fastq
 	  idba_ud -r $FILES_FA/$namefileR1/$namefileR1.mergedR1-R2.fastq --num_threads 8 -o idba_ud_out
@@ -115,9 +119,9 @@ if [ "$siRNA" = true ]; then
 	  mkdir $f -p
 	  cd $f
 	  mkdir SPAdes -p
-	  # lance spades_merge_siRNA sur fichier fasta 1e arg, dossier sortie 2e arg, kmers de 11 à 37 pas de 2 :
-	  bash ~/scripts/spades_merge_siRNA.sh $FILES_FA/$f.fastq $FILES_FA/$f/SPAdes/ 11 37 2
-	  #bash idba_merge_siRNA.sh . $f 11 37 2
+	  # lance spades_merge_siRNA sur fichier fasta 1e arg, dossier sortie 2e arg, kmers de 13 à 37 pas de 2 :
+	  bash ~/scripts/spades_merge_siRNA.sh $FILES_FA/$f.fastq $FILES_FA/$f/SPAdes/ 13 37 2
+	  #bash idba_merge_siRNA.sh . $f 13 37 2
 	  
 	  # compress les fasta avec le script de denis si y a redondance : 
 	  cd $FILES_FA/$f/SPAdes/
