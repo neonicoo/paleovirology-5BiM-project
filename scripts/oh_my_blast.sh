@@ -7,6 +7,27 @@ FILENAME="${FILE%.*}"
 conda activate paleogenomic
 echo "paleogenomic conda env ON"
 
+function myblastn ()
+{
+	blastn -query $1 \
+		  	-db $2 \
+		  	-out $3\
+		  	-num_threads 8 \
+		  	-evalue 0.01 \
+		  	-outfmt 6
+}
+
+function myblastx ()
+{
+	blastx -query $1 \
+			-db $2\
+			-out $3\
+			-num_threads 8 \
+			-evalue 0.01 \
+			-outfmt 6
+}
+
+
 while [ -n "$1" ]; do # while loop starts
 
 	case "$1" in
@@ -19,22 +40,10 @@ while [ -n "$1" ]; do # while loop starts
 				y|Y) 
 					# $3 : virusdetect_db
 
-					blastn -query $FILEPATH \
-						  	-db $3vrl_Plants_239_U100 \
-						  	-out ${FILENAME}_virusdetect_blastn.txt\
-						  	-num_threads 8 \
-						  	-evalue 0.01 \
-						  	-outfmt 6
-
+					myblastn $FILEPATH $3vrl_Plants_239_U100 ${FILENAME}_virusdetect_blastn.txt
 					echo "#### blastN on virusdetect db - success ####"
 
-					blastx -query $FILEPATH \
-							-db $3vrl_Plants_239_U100_prot\
-							-out ${FILENAME}_virusdetect_blastx.txt\
-							-num_threads 8 \
-							-evalue 0.01 \
-							-outfmt 6
-
+					myblastx $FILEPATH $3vrl_Plants_239_U100_prot ${FILENAME}_virusdetect_blastx.txt
 					echo "#### blastX on virusdetect db- success ####"
 
 					echo "#### Virus identification ####"
@@ -66,38 +75,16 @@ while [ -n "$1" ]; do # while loop starts
 					# $3 : nr db
 					# $4 : nt db
 
-					blastn -query $FILEPATH \
-						  	-db $3 \
-						  	-out ${FILENAME}_nr_blastn.txt\
-						  	-num_threads 8 \
-						  	-evalue 0.01 \
-						  	-outfmt 6
-
+					myblastn $FILEPATH $3 ${FILENAME}_nr_blastn.txt
 					echo "#### blastN on nr db - success ####"
 
-					blastx -query $FILEPATH \
-							-db $3 \
-							-out ${FILENAME}_nr_blastx.txt\
-							-num_threads 8 \
-							-evalue 0.01 \
-							-outfmt 6
+					myblastx $FILEPATH $3 ${FILENAME}_nt_blastx.txt
 					echo "#### blastX nr db - success ####"
 
-					blastn -query $FILEPATH \
-						  	-db $4 \
-						  	-out ${FILENAME}_nt_blastn.txt\
-						  	-num_threads 8 \
-						  	-evalue 0.01 \
-						  	-outfmt 6
-
+					myblastn $FILEPATH $4 ${FILENAME}_nt_blastn.txt
 					echo "#### blastN on nt db - success ####"
 
-					blastx -query $FILEPATH \
-							-db $4 \
-							-out ${FILENAME}_nt_blastx.txt\
-							-num_threads 8 \
-							-evalue 0.01 \
-							-outfmt 6
+					myblastx $FILEPATH $4 ${FILENAME}_nt_blastx.txt
 					echo "#### blastX nt db - success ####"
 
 					echo "#### DONE ####" ;;
