@@ -360,9 +360,42 @@ if [ "$VANA" = true ]; then
 	  
 	  # on fait le bbmap/repair
 	  bash ~/scripts/bbmap/repair.sh in=$FILES_FA/$namefileR1.fastq in2=$FILES_FA/$namefileR2.fastq out1=$FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq out2=$FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq outs=$FILES_FA/$namefileR1/$namefileR1.unpaired.fastq
-	  # lance spades : 
-	  spades.py -o outputMETA/ -1 $FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq -2 $FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq -s $FILES_FA/$namefileR1/$namefileR1.unpaired.fastq --meta
+	  if [ "$VANA" = true ]; then
+	echo "Assembling VANA data"
+	FILES_FA="$SCRIPT_DIR/VANA/trimmed_cutadapt/"
+	mkdir $FILES_FA/SPAdes	-p
+	R1="R1"
+	R2="R2"
+	for namefileR1 in $FILES_FA/*R1*.fastq
+	do
+	  #echo "$(basename $namefileR1 .fastq)"
+	  namefileR1=$(basename $namefileR1 .fastq)
+	  #on remplace le R1 par le R2 :
+	  namefileR2=${namefileR1/R1/R2}
+	  #echo "R2 = ${namefileR2/R1/R2}"
+	  cd $FILES_FA/
+	  echo "Creating $namefileR1 directory"
+	  mkdir $namefileR1 -p
+	  cd $namefileR1
+	  echo "Assembling $namefileR1 and $namefileR2 pair-end files..."
 	  
+	  # on fait le bbmap/repair
+	  bash ~/scripts/bbmap/repair.sh in=$FILES_FA/$namefileR1.fastq in2=$FILES_FA/$namefileR2.fastq out1=$FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq out2=$FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq outs=$FILES_FA/$namefileR1/$namefileR1.unpaired.fastq
+	  
+	  #SI $FILES_FA/$namefileR1/$namefileR1.unpaired.fastq est vide : spades va bugger 
+	  if [ -s $FILES_FA/$namefileR1/$namefileR1.unpaired.fastq ]; then
+		# lance spades : 
+		spades.py -o outputMETA/ -1 $FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq -2 $FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq -s $FILES_FA/$namefileR1/$namefileR1.unpaired.fastq --meta
+	  else
+		spades.py -o outputMETA/ -1 $FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq -2 $FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq --meta
+	  fi
+	  
+	  #pour idba_ud on merge 1 et 2 en un seul fichier sans les unpaired :
+	  fq2fa --merge $FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq $FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq $FILES_FA/$namefileR1/$namefileR1.mergedR1-R2.fastq
+	  idba_ud -r $FILES_FA/$namefileR1/$namefileR1.mergedR1-R2.fastq --num_threads 8 -o idba_ud_out
+
+	  done
+fi
 	  #pour idba_ud on merge 1 et 2 en un seul fichier sans les unpaired :
 	  fq2fa --merge $FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq $FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq $FILES_FA/$namefileR1/$namefileR1.mergedR1-R2.fastq
 	  idba_ud -r $FILES_FA/$namefileR1/$namefileR1.mergedR1-R2.fastq --num_threads 8 -o idba_ud_out
@@ -391,9 +424,9 @@ if [ "$siRNA" = true ]; then
 	  mkdir $f -p
 	  cd $f
 	  mkdir SPAdes -p
-	  # lance spades_merge_siRNA sur fichier fasta 1e arg, dossier sortie 2e arg, kmers de 11 à 37 pas de 2 :
-	  spades_merge $FILES_FA/$f.fastq $FILES_FA/$f/SPAdes/ 11 37 2
-	  #bash idba_merge_siRNA.sh . $f 11 37 2
+	  # lance spades_merge_siRNA sur fichier fasta 1e arg, dossier sortie 2e arg, kmers de 13 à 37 pas de 2 :
+	  spades_merge $FILES_FA/$f.fastq $FILES_FA/$f/SPAdes/ 13 37 2
+	  #bash idba_merge_siRNA.sh . $f 13 37 2
 	  
 	  # compress les fasta avec le script de denis si y a redondance : 
 	  cd $FILES_FA/$f/SPAdes/
