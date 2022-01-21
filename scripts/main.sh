@@ -7,8 +7,21 @@
 
 # donne le repertoire du script : 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+DATA_DIR="${SCRIPT_DIR}/data"
+SIRNA_DIR="$DATA_DIR/siRNA"
+VANA_DIR="$DATA_DIR/VANA"
+DATABASES_DIR="${SCRIPT_DIR}/databases"
 
-if [ -d ${SCRIPT_DIR}/plant_239_U100 ] 
+
+if [ -d ${DATABASES_DIR} ]
+then
+	:
+else
+	mkdir databases 
+
+cd databases
+
+if [ -d ${DATABASES_DIR}/plant_239_U100 ] 
 then
     :
 else
@@ -50,19 +63,19 @@ fi
 # QC/fastqc --> même nom.fastq.html : avant trimming ; _trimmed.html : après trimming 
  
 
-if [ -d ${SCRIPT_DIR}/data/siRNA ] 
+if [ -d ${SIRNA_DIR} ] 
 then
     :
 else
-    echo "${SCRIPT_DIR}/data/siRNA doesn't exist"
+    echo "${SIRNA_DIR} doesn't exist"
     exit
 fi
 
-if [ -d ${SCRIPT_DIR}/data/VANA ] 
+if [ -d ${VANA_DIR} ] 
 then
     :
 else
-    echo "${SCRIPT_DIR}/data/VANA doesn't exist"
+    echo "${VANA_DIR} doesn't exist"
     exit
 fi
 
@@ -105,9 +118,9 @@ esac
 #####################
 
 if [ "$siRNA" = true ]; then
-	echo "Preprocessing siRNA data"
 	cd $SCRIPT_DIR
-	cd siRNA/
+	echo "Preprocessing siRNA data"
+	cd $SIRNA_DIR
 	FILES="raw/"
 	mkdir -p QC
 	mkdir -p QC/fastqc
@@ -143,7 +156,7 @@ fi
 if [ "$VANA" = true ]; then
 	cd $SCRIPT_DIR
 	echo "Preprocessing VANA data"
-	cd VANA/
+	cd $VANA_DIR
 	FILES="raw/"
 	mkdir -p QC
 	mkdir -p QC/fastqc
@@ -341,7 +354,7 @@ esac
 	
 if [ "$VANA" = true ]; then
 	echo "Assembling VANA data"
-	FILES_FA="$SCRIPT_DIR/VANA/trimmed_cutadapt/"
+	FILES_FA="${VANA_DIR}trimmed_cutadapt/"
 	mkdir $FILES_FA/SPAdes	-p
 	R1="R1"
 	R2="R2"
@@ -382,7 +395,7 @@ fi
 	
 if [ "$siRNA" = true ]; then
 	echo "Assembling siRNA data"
-	FILES_FA="$SCRIPT_DIR/siRNA/trimmed_cutadapt/"
+	FILES_FA="${SIRNA_DIR}/trimmed_cutadapt/"
 	for f in $FILES_FA*.fastq
 	do
 	  cd $FILES_FA/
@@ -406,13 +419,13 @@ fi
 ##############################################################################################
 
 
-
-
-
-
 FILEPATH=$2 #contigs to blast
 FILE="${FILEPATH##*/}"
 FILENAME="${FILE%.*}"
+
+VIRUSDETECTDB_DIR="${DATABASES_DIR}/plant_239_U100"
+NR_DIR="${DATABASES_DIR}/nr"
+NT_DIR="${DATABASES_DIR}/nt"
 
 function myblastn ()
 {
@@ -434,77 +447,73 @@ function myblastx ()
 			-outfmt 6
 }
 
-
-while [ -n "$1" ]; do # while loop starts
-
-	case "$1" in
-
-	-virusdetect) 
-		echo "You're going to blast{n,x} your contigs over the virus plants database"
-		echo -n "Continue? [y/n] " 
-		read doit
-			case $doit in 
-				y|Y) 
-					# $3 : virusdetect_db
-
-					myblastn $FILEPATH $3vrl_Plants_239_U100 ${FILENAME}_virusdetect_blastn.txt
-					echo "#### blastN on virusdetect db - success ####"
-
-					myblastx $FILEPATH $3vrl_Plants_239_U100_prot ${FILENAME}_virusdetect_blastx.txt
-					echo "#### blastX on virusdetect db- success ####"
-
-					echo "#### Virus identification ####"
-
-					if [[ -s ${FILENAME}_virusdetect_blastn.txt ]]
-					then 
-						python3 ./blastn_virus_identity.py ${FILENAME}_virusdetect_blastn.txt $3 ${FILENAME}_virusdetect_blastn_taxon
-					fi
-
-					if [[ -s ${FILENAME}_virusdetect_blastx.txt ]]
-					then 
-						python3 ./blastx_virus_identify.py ${FILENAME}_virusdetect_blastx.txt $3 ${FILENAME}_virusdetect_blastx_taxon
-					fi
-
-					echo "#### DONE ####" ;;
-
-				n|N) echo "Cancel ";; 
-				*) echo "Cancel" ;; 
-			esac
-			shift
-		;;
-
-	-nrnt)
-		echo "You're going to blast{n,x} your contigs over the nr/nt database"
-		echo -n "Continue? [y/n] " 
-		read doit2
-			case $doit2 in 
-				y|Y) 
-					# $3 : nr db
-					# $4 : nt db
-
-					myblastn $FILEPATH $3 ${FILENAME}_nr_blastn.txt
-					echo "#### blastN on nr db - success ####"
-
-					myblastx $FILEPATH $3 ${FILENAME}_nt_blastx.txt
-					echo "#### blastX nr db - success ####"
-
-					myblastn $FILEPATH $4 ${FILENAME}_nt_blastn.txt
-					echo "#### blastN on nt db - success ####"
-
-					myblastx $FILEPATH $4 ${FILENAME}_nt_blastx.txt
-					echo "#### blastX nt db - success ####"
-
-					echo "#### DONE ####" ;;
-
-				n|N) echo "Cancel ";; 
-				*) echo "Cancel" ;;
-			esac
-			shift
-		;;
-	esac
-	shift
-
+UserChoice=0
+while [[ $UserChoice != [12] ]]
+do 
+	echo "---------------------------------"
+	printf "Which database you want to give to blast ? \n Please type :\n \"1\" for Virusdetect vrl_plant DB\n \"2\" for nr and nt DB\n"
+  	read -p 'Data to preprocess : ' UserChoice
+  	if [[ $UserChoice == [qQ] ]]; then
+    	break
+  	fi
 done
+
+virusdetect=false
+nrnt=false
+
+case $UserChoice in 
+	1)
+	  virusdetect=true
+	;;
+	2)
+	  nrnt=true
+	;;
+esac
+
+if [ "$virusdetect" = true ]
+then
+
+	echo "You're going to blast{n,x} your contigs over the virus plants database"
+
+	myblastn $FILEPATH ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100 ${FILENAME}_virusdetect_blastn.txt
+	echo "#### blastN on virusdetect db - success ####"
+
+	myblastx $FILEPATH ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100_prot ${FILENAME}_virusdetect_blastx.txt
+	echo "#### blastX on virusdetect db- success ####"
+
+	echo "#### Virus identification ####"
+
+	if [[ -s ${FILENAME}_virusdetect_blastn.txt ]]
+	then 
+		python3 ./blastn_virus_identity.py ${FILENAME}_virusdetect_blastn.txt $3 ${FILENAME}_virusdetect_blastn_taxon
+	fi
+
+	if [[ -s ${FILENAME}_virusdetect_blastx.txt ]]
+	then 
+		python3 ./blastx_virus_identify.py ${FILENAME}_virusdetect_blastx.txt $3 ${FILENAME}_virusdetect_blastx_taxon
+	fi
+
+	echo "#### DONE ####" 
+fi
+
+if [ "$nrnt" = true ]
+then
+	echo "You're going to blast{n,x} your contigs over the nr/nt database"
+
+	myblastn $FILEPATH ${DATABASES_DIR}/nr ${FILENAME}_nr_blastn.txt
+	echo "#### blastN on nr db - success ####"
+
+	myblastx $FILEPATH ${DATABASES_DIR}/nr ${FILENAME}_nt_blastx.txt
+	echo "#### blastX nr db - success ####"
+
+	myblastn $FILEPATH ${DATABASES_DIR}/nt ${FILENAME}_nt_blastn.txt
+	echo "#### blastN on nt db - success ####"
+
+	myblastx $FILEPATH ${DATABASES_DIR}/nt ${FILENAME}_nt_blastx.txt
+	echo "#### blastX nt db - success ####"
+
+	echo "#### DONE ####" 
+fi
 
 conda deactivate
 echo "paleogenomic conda env OFF"
