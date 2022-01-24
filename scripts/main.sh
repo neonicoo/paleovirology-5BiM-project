@@ -170,7 +170,7 @@ if [ "$VANA" = true ]; then
             mv "$file" "${file/.fastq.gz/}"
 	  fi
 	done
-        cd $SCRIPT_DIR/VANA/
+        cd $VANA_DIR
 
 	#fastqc
 	fastqc -t 6 raw/*.fastq -o QC/fastqc > log/fastqc_pre.txt
@@ -242,51 +242,51 @@ function spades_merge ()
 
 function compress_myfasta ()
 {
-	# Usage: ./Compress_fasta.sh File.fa
+	# Usage: ./compress_fasta.sh File.fa
 	# Remove duplicated sequences in a multifasta file
 	# Be careful: sequence IDs must be different
-	# Output: $1_Compressed.fa
+	# Output: $1_compressed.fa
 
 	module load fastx_toolkit/0.0.14
 	module load vsearch/2.14.0
 
-	echo "./Compress_fasta.sh "$1
+	echo "./compress_fasta.sh "$1
 	echo $(grep -c "^>" $1)" sequences in "$1
 
-	vsearch --cluster_fast $1 --centroids $1_Compressed.fa --iddef 0 --id 1.00 --strand both --qmask none --fasta_width 0 --minseqlength 1 --maxaccept 0 --maxreject 0
+	vsearch --cluster_fast $1 --centroids $1_compressed.fa --iddef 0 --id 1.00 --strand both --qmask none --fasta_width 0 --minseqlength 1 --maxaccept 0 --maxreject 0
 
 	fasta_formatter -w 0 -i $1 -o $1.tab -t
-	fasta_formatter -w 0 -i $1_Compressed.fa -o $1_Compressed.fa.tab -t
-	cut -f2 $1_Compressed.fa.tab | rev | tr atgcATGC tacgTACG > $1_Compressed.fa.tab.tab
-	paste $1_Compressed.fa.tab $1_Compressed.fa.tab.tab > $1_Compressed.fa.tab.tab.tab
-	rm $1_Compressed.fa.tab
-	rm $1_Compressed.fa.tab.tab
-	awk -F $"\t" '{print ">"$1"|RC\n"$3}' $1_Compressed.fa.tab.tab.tab > $1_Compressed.fa.rc 
-	rm $1_Compressed.fa.tab.tab.tab
-	cat $1_Compressed.fa $1_Compressed.fa.rc > $1_Compressed.fa.all
-	rm $1_Compressed.fa.rc
+	fasta_formatter -w 0 -i $1_compressed.fa -o $1_compressed.fa.tab -t
+	cut -f2 $1_compressed.fa.tab | rev | tr atgcATGC tacgTACG > $1_compressed.fa.tab.tab
+	paste $1_compressed.fa.tab $1_compressed.fa.tab.tab > $1_compressed.fa.tab.tab.tab
+	rm $1_compressed.fa.tab
+	rm $1_compressed.fa.tab.tab
+	awk -F $"\t" '{print ">"$1"|RC\n"$3}' $1_compressed.fa.tab.tab.tab > $1_compressed.fa.rc 
+	rm $1_compressed.fa.tab.tab.tab
+	cat $1_compressed.fa $1_compressed.fa.rc > $1_compressed.fa.all
+	rm $1_compressed.fa.rc
 	old_IFS=$IFS
 	IFS=$'\t'
-	> $1_Compressed.fa.tab
+	> $1_compressed.fa.tab
 	while read c1 c2
 		do
-		printf "$c1\t$c2\t" >> $1_Compressed.fa.tab
-		grep -c $c2 $1_Compressed.fa.all >> $1_Compressed.fa.tab
+		printf "$c1\t$c2\t" >> $1_compressed.fa.tab
+		grep -c $c2 $1_compressed.fa.all >> $1_compressed.fa.tab
 	done < $1.tab
 	IFS=$old_IFS
 	rm $1.tab
-	rm $1_Compressed.fa.all
-	awk -F $"\t" '{if ($3==0) print ">"$1"\n"$2}' $1_Compressed.fa.tab > $1_Compressed.fa.more
-	rm $1_Compressed.fa.tab
-	echo $(grep -c "^>" $1_Compressed.fa.more)" readded sequences"
-	cat $1_Compressed.fa.more >> $1_Compressed.fa
-	rm $1_Compressed.fa.more 
+	rm $1_compressed.fa.all
+	awk -F $"\t" '{if ($3==0) print ">"$1"\n"$2}' $1_compressed.fa.tab > $1_compressed.fa.more
+	rm $1_compressed.fa.tab
+	echo $(grep -c "^>" $1_compressed.fa.more)" readded sequences"
+	cat $1_compressed.fa.more >> $1_compressed.fa
+	rm $1_compressed.fa.more 
 
-	fasta_formatter -w 0 -i $1_Compressed.fa -o $1_Compressed.fa.tab -t 
-	awk -F $"\t" '{print $1"\t"$2"\t"length($2)}' $1_Compressed.fa.tab | sort -t $'\t' -n -r -k3,3 | awk -F $"\t" '{print ">"$1"\n"$2}' > $1_Compressed.fa
-	rm $1_Compressed.fa.tab
+	fasta_formatter -w 0 -i $1_compressed.fa -o $1_compressed.fa.tab -t 
+	awk -F $"\t" '{print $1"\t"$2"\t"length($2)}' $1_compressed.fa.tab | sort -t $'\t' -n -r -k3,3 | awk -F $"\t" '{print ">"$1"\n"$2}' > $1_compressed.fa
+	rm $1_compressed.fa.tab
 
-	echo $(grep -c "^>" $1_Compressed.fa)" sequences in "$1_Compressed.fa
+	echo $(grep -c "^>" $1_compressed.fa)" sequences in "$1_compressed.fa
 }
 
 #####################
@@ -309,7 +309,6 @@ function compress_myfasta ()
 # SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 # donne le repertoire du script : 
 
-SCRIPT_DIR=~/test_data/
 printf "\nHello, this is the assembly script for VANA and siRNA data.\n\n Please make sure that you ran the preprocessing script : preprocess.sh \n"
 UserChoice=0
 while [[ $UserChoice != [123] ]]
@@ -375,7 +374,7 @@ if [ "$VANA" = true ]; then
 	  bash ~/scripts/bbmap/repair.sh in=$FILES_FA/$namefileR1.fastq in2=$FILES_FA/$namefileR2.fastq out1=$FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq out2=$FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq outs=$FILES_FA/$namefileR1/$namefileR1.unpaired.fastq
 	  if [ "$VANA" = true ]; then
 	echo "Assembling VANA data"
-	FILES_FA="$SCRIPT_DIR/VANA/trimmed_cutadapt/"
+	FILES_FA="${VANA_DIR}trimmed_cutadapt/"
 	mkdir $FILES_FA/SPAdes	-p
 	R1="R1"
 	R2="R2"
@@ -452,7 +451,7 @@ fi
 ##############################################################################################
 
 
-FILEPATH=$2 #contigs to blast
+FILEPATH=""
 FILE="${FILEPATH##*/}"
 FILENAME="${FILE%.*}"
 
