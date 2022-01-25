@@ -244,7 +244,7 @@ function spades_merge ()
 
 	echo "Assembling $FILE file..."
 	for ((i=$DEB;i<$FIN;i+=$PAS)); do 
-		echo "spades.py -o contigs_rnaviral/ -s ../../$FILE.fastq -k ${i} --rnaviral "
+		echo "spades.py -o contigs_rnaviral/ -s $FILE -k ${i} --rnaviral "
 		spades.py -o contigs_rnaviral/ -s $FILE -k ${i} --rnaviral 
 		# récupère le contigs.fasta
 		cat contigs_rnaviral/contigs.fasta >> merged_SPAdes.fasta
@@ -300,6 +300,7 @@ function compress_myfasta ()
 	echo $(grep -c "^>" $1_compressed.fa)" sequences in "$1_compressed.fa
 }
 
+
 #####################
 # VANA ##############
 ##################### 
@@ -320,7 +321,7 @@ function compress_myfasta ()
 # SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 # donne le repertoire du script : 
 
-printf "\nHello, this is the assembly script for VANA and siRNA data.\n\n Please make sure that you ran the preprocessing script : preprocess.sh \n"
+printf "\nHello, this is the assembly script for VANA and siRNA data.\n"
 UserChoice=0
 while [[ $UserChoice != [123] ]]
 do
@@ -349,8 +350,6 @@ case  $UserChoice in
 	  VANA=true
 	;;
 esac
-
-
 
 #####################
 # VANA ##############
@@ -431,7 +430,7 @@ if [ "$siRNA" = true ]; then
       cp merged_SPAdes.fasta compressed_SPAdes.fasta
 
       compress_myfasta compressed_SPAdes.fasta
-      mv compressed_SPAdes.fasta_Compressed.fa compressed_SPAdes.fa
+      mv compressed_SPAdes.fasta_compressed.fa compressed_SPAdes.fa
 	done
 fi
 
@@ -440,6 +439,8 @@ fi
 
 mkdir ${DATA_DIR}/blast
 BLAST_DIR="${DATA_DIR}/blast"
+mkdir ${BLAST_DIR}/BLAST_SIRNA
+mkdir ${BLAST_DIR}/VANA
 
 VIRUSDETECTDB_DIR="${DATABASES_DIR}/plant_239_U100"
 NR_DIR="${DATABASES_DIR}/nr"
@@ -468,7 +469,7 @@ function myblastx ()
 cd BLAST_DIR
 
 cp -p ${VANA_DIR}/trimmed_cutadapt/SPAdes/contigs.fasta .
-cp -p ${SIRNA_DIR}/trimmed_cutadapt/SPAdes/compressed_SPAdes.fa .
+cp -p ${SIRNA_DIR}/trimmed_cutadapt/SPAdes/compressed_SPAdes.fa 
 
 for FILE in $BLAST_DIR
 do
