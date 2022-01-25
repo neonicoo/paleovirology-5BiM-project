@@ -258,10 +258,7 @@ function compress_myfasta ()
 	# Be careful: sequence IDs must be different
 	# Output: $1_compressed.fa
 
-	module load fastx_toolkit/0.0.14
-	module load vsearch/2.14.0
-
-	echo "./compress_fasta.sh "$1
+	echo "compress_fasta on "$1
 	echo $(grep -c "^>" $1)" sequences in "$1
 
 	vsearch --cluster_fast $1 --centroids $1_compressed.fa --iddef 0 --id 1.00 --strand both --qmask none --fasta_width 0 --minseqlength 1 --maxaccept 0 --maxreject 0
@@ -427,20 +424,72 @@ if [ "$siRNA" = true ]; then
 	  # compress les fasta avec le script de denis si y a redondance : 
 	  cd $FILES_FA/$f/SPAdes/
 
-      cp merged_SPAdes.fasta compressed_SPAdes.fasta
+    cp -p merged_SPAdes.fasta ${f}_compressed_SPAdes.fasta
 
-      compress_myfasta compressed_SPAdes.fasta
-      mv compressed_SPAdes.fasta_compressed.fa compressed_SPAdes.fa
+    compress_myfasta ${f}_compressed_SPAdes.fasta
+    mv ${f}_compressed_SPAdes.fasta_compressed.fa ${f}_compressed_SPAdes.fa
 	done
 fi
 
 ########################################## Blast #############################################
 ##############################################################################################
 
-mkdir ${DATA_DIR}/blast
-BLAST_DIR="${DATA_DIR}/blast"
-mkdir ${BLAST_DIR}/BLAST_SIRNA
-mkdir ${BLAST_DIR}/VANA
+
+if [ -d ${BLAST_DIR} ]
+then
+	:
+else
+	mkdir ${DATA_DIR}/blast
+	BLAST_DIR="${DATA_DIR}/blast"
+	mkdir ${BLAST_DIR}/siRNA
+	mkdir ${BLAST_DIR}/VANA
+	echo "Created $BLAST_DIR"
+fi
+
+
+printf "\nHello, this is the blast step.\n"
+UserChoice=0
+while [[ $UserChoice != [123] ]]
+do
+  echo "---------------------------------"
+  printf "Which data do you want to assemble ? \n Please type :\n \"1\" for VANA\n \"2\" for siRNA\n \"3\" for both\n \"q\" to quit.\n"
+  read -p 'Data to preprocess : ' UserChoice
+  if [[ $UserChoice == [qQ] ]]; then
+    break
+  fi
+done
+
+
+siRNA=false
+VANA=false
+
+case  $UserChoice in 
+
+	3)
+	  siRNA=true
+	  VANA=true
+	;;
+	2)
+	  siRNA=true
+	;;
+	1)
+	  VANA=true
+	;;
+esac
+
+if [ siRNA = true ]
+then
+	for sample in ${SIRNA_DIR}/trimmed_cutadapt
+	do
+		if [[ -d sample ]]
+		then
+			cd ${SIRNA_DIR}/trimmed_cutadapt/$sample/SPAdes 
+			cp -p ./$sample_compressed_SPAdes.fa ${BLAST_DIR}/BLAST_SIRNA/
+		fi
+	done
+fi
+
+
 
 VIRUSDETECTDB_DIR="${DATABASES_DIR}/plant_239_U100"
 NR_DIR="${DATABASES_DIR}/nr"
@@ -469,7 +518,7 @@ function myblastx ()
 cd BLAST_DIR
 
 cp -p ${VANA_DIR}/trimmed_cutadapt/SPAdes/contigs.fasta .
-cp -p ${SIRNA_DIR}/trimmed_cutadapt/SPAdes/compressed_SPAdes.fa 
+cp -p ${SIRNA_DIR}/trimmed_cutadapt/SPAdes/compressed_SPAdes.fa .
 
 for FILE in $BLAST_DIR
 do
