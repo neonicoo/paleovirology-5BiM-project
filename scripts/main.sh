@@ -5,7 +5,7 @@
 ##################################### Initial settings  ######################################
 ##############################################################################################
 
-## donne le repertoire du script : 
+# donne le repertoire du script : 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 #echo "$SCRIPT_DIR"
 DATA_DIR="${SCRIPT_DIR}/data"
@@ -32,7 +32,7 @@ cd databases
 
 if [ -d ${DATABASES_DIR}/plant_239_U100 ] 
 then
-    #echo "$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+    echo "$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
     :
 else
     mkdir plant_239_U100
@@ -49,7 +49,6 @@ else
 	cd ..
 fi
 
-
 if conda env list | grep -q paleogenomic
 then
    conda activate paleogenomic
@@ -62,9 +61,6 @@ else
 	echo "paleogenomic conda env ON"
 fi
 
-
-###################################### Pre - processing  #####################################
-##############################################################################################
 
 # dossiers : 
 # data --> siRNA/ et VANA/
@@ -131,6 +127,8 @@ if [ "$siRNA" = true ]; then
 	cd $SCRIPT_DIR
 	echo "Preprocessing siRNA data"
 	cd $SIRNA_DIR
+	echo "$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+	
 	FILES="raw/"
 	mkdir -p QC
 	mkdir -p QC/fastqc
@@ -167,6 +165,8 @@ if [ "$VANA" = true ]; then
 	cd $SCRIPT_DIR
 	echo "Preprocessing VANA data"
 	cd $VANA_DIR
+	echo "$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
 	FILES="raw/"
 	mkdir -p QC
 	mkdir -p QC/fastqc
@@ -209,6 +209,7 @@ if [ "$VANA" = true ]; then
 	multiqc -s -f QC/fastqc/*zip -o QC > log/multiqc.txt
 
 fi
+
 
 ###################################### De novo assembly ######################################
 ##############################################################################################
@@ -363,11 +364,11 @@ esac
 	
 if [ "$VANA" = true ]; then
 	echo "Assembling VANA data"
-	FILES_FA="${VANA_DIR}/trimmed_cutadapt/"
+	FILES_FA="${VANA_DIR}/trimmed_cutadapt"
 	mkdir $FILES_FA/SPAdes	-p
 	R1="R1"
 	R2="R2"
-	for namefileR1 in $FILES_FA/*R1*.fastq
+	for namefileR1 in ${FILES_FA}/*R1*.fastq
 	do
 	  #echo "$(basename $namefileR1 .fastq)"
 	  namefileR1=$(basename $namefileR1 .fastq)
@@ -375,34 +376,14 @@ if [ "$VANA" = true ]; then
 	  namefileR2=${namefileR1/R1/R2}
 	  #echo "R2 = ${namefileR2/R1/R2}"
 	  cd $FILES_FA/
+	  echo "$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 	  echo "Creating $namefileR1 directory"
 	  mkdir $namefileR1 -p
 	  cd $namefileR1
 	  echo "Assembling $namefileR1 and $namefileR2 pair-end files..."
 	  
 	  # on fait le bbmap/repair
-	  bash ~/scripts/bbmap/repair.sh in=$FILES_FA/$namefileR1.fastq in2=$FILES_FA/$namefileR2.fastq out1=$FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq out2=$FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq outs=$FILES_FA/$namefileR1/$namefileR1.unpaired.fastq
-	  if [ "$VANA" = true ]; then
-	echo "Assembling VANA data"
-	FILES_FA="${VANA_DIR}/trimmed_cutadapt/"
-	mkdir $FILES_FA/SPAdes	-p
-	R1="R1"
-	R2="R2"
-	for namefileR1 in $FILES_FA/*R1*.fastq
-	do
-	  #echo "$(basename $namefileR1 .fastq)"
-	  namefileR1=$(basename $namefileR1 .fastq)
-	  #on remplace le R1 par le R2 :
-	  namefileR2=${namefileR1/R1/R2}
-	  #echo "R2 = ${namefileR2/R1/R2}"
-	  cd $FILES_FA/
-	  echo "Creating $namefileR1 directory"
-	  mkdir $namefileR1 -p
-	  cd $namefileR1
-	  echo "Assembling $namefileR1 and $namefileR2 pair-end files..."
-	  
-	  # on fait le bbmap/repair
-	  bash ~/scripts/bbmap/repair.sh in=$FILES_FA/$namefileR1.fastq in2=$FILES_FA/$namefileR2.fastq out1=$FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq out2=$FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq outs=$FILES_FA/$namefileR1/$namefileR1.unpaired.fastq
+	  bash ${BBMAP}/repair.sh in=$FILES_FA/$namefileR1.fastq in2=$FILES_FA/$namefileR2.fastq out1=$FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq out2=$FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq outs=$FILES_FA/$namefileR1/$namefileR1.unpaired.fastq
 	  
 	  #SI $FILES_FA/$namefileR1/$namefileR1.unpaired.fastq est vide : spades va bugger 
 	  if [ -s $FILES_FA/$namefileR1/$namefileR1.unpaired.fastq ]; then
@@ -418,13 +399,7 @@ if [ "$VANA" = true ]; then
 
 	  done
 fi
-	  #pour idba_ud on merge 1 et 2 en un seul fichier sans les unpaired :
-	  fq2fa --merge $FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq $FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq $FILES_FA/$namefileR1/$namefileR1.mergedR1-R2.fastq
-	  idba_ud -r $FILES_FA/$namefileR1/$namefileR1.mergedR1-R2.fastq --num_threads 8 -o idba_ud_out
 
-	  done
-fi
-	
 
 #####################
 # siRNA #############
@@ -437,22 +412,24 @@ fi
 	
 if [ "$siRNA" = true ]; then
 	echo "Assembling siRNA data"
-	FILES_FA="${SIRNA_DIR}/trimmed_cutadapt/"
-	for f in $FILES_FA*.fastq
+	FILES_FA="${SIRNA_DIR}/trimmed_cutadapt"
+	for f in ${FILES_FA}/*.fastq
 	do
 	  cd $FILES_FA/
 	  f=$(basename $f .fastq)
 	  echo "Creating $f directory"
 	  mkdir $f -p
 	  cd $f
+	  echo "$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 	  mkdir SPAdes -p
 	  # lance spades_merge_siRNA sur fichier fasta 1e arg, dossier sortie 2e arg, kmers de 13 à 37 pas de 2 :
 	  spades_merge $FILES_FA/$f.fastq $FILES_FA/$f/SPAdes/ 13 37 2
-	  #bash idba_merge_siRNA.sh . $f 13 37 2
 	  
 	  # compress les fasta avec le script de denis si y a redondance : 
 	  cd $FILES_FA/$f/SPAdes/
+
       cp merged_SPAdes.fasta compressed_SPAdes.fasta
+
       compress_myfasta compressed_SPAdes.fasta
       mv compressed_SPAdes.fasta_Compressed.fa compressed_SPAdes.fa
 	done
