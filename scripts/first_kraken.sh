@@ -181,20 +181,21 @@ if [ "$VANA" = true ]; then
 	for fileR2 in $trimmed_VANA/*R2*.fastq
 	do
 		fileR2=$(basename $fileR2 .fastq)
-		cd $trimmed_VANA/$fileR2
+		dirR2=$(basename ${fileR2/R2/R1} .fastq)
+		cd $trimmed_VANA/$dirR2
 		mkdir filtered_reads_viral -p
 		cd filtered_reads_viral
 
 		if [ "$elim1" = true]; then
-			cd $trimmed_VANA/$fileR2/filtered_reads_viral
+			cd $trimmed_VANA/$dirR2/filtered_reads_viral
 			mkdir no_viral
 			cd no_viral
 			#kraken
-			kraken2 --threads 10 --db ~/kraken_db/kraken2_no_viral_db --unclassified-out potential_viral.fa --classified-out non_viral.fa --report report_no_viral --use-names "$trimmed_VANA/$fileR2.fastq"
+			kraken2 --threads 10 --db ~/kraken_db/kraken2_no_viral_db --unclassified-out potential_viral.fa --classified-out non_viralR1.fa --report report_no_viral --use-names "$trimmed_VANA/$fileR2.fastq"
 		fi
 
 		if [ "$elim2" = true]; then
-			cd $trimmed_VANA/$fileR2/filtered_reads_viral
+			cd $trimmed_VANA/$dirR2/filtered_reads_viral
 			mkdir plant
 			cd plant
 			#kraken
@@ -202,7 +203,7 @@ if [ "$VANA" = true ]; then
 		fi
 
 		if [ "$map" = true]; then
-			cd $trimmed_VANA/$fileR2/filtered_reads_viral
+			cd $trimmed_VANA/$dirR2/filtered_reads_viral
 			mkdir viral
 			cd viral
 			#kraken
