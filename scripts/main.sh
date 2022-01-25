@@ -5,31 +5,34 @@
 ##################################### Initial settings  ######################################
 ##############################################################################################
 
-# donne le repertoire du script : 
+## donne le repertoire du script : 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+#echo "$SCRIPT_DIR"
 DATA_DIR="${SCRIPT_DIR}/data"
 SIRNA_DIR="$DATA_DIR/siRNA"
 VANA_DIR="$DATA_DIR/VANA"
 DATABASES_DIR="${SCRIPT_DIR}/databases"
 BBMAP="${SCRIPT_DIR}/bbmap"
 
-if [ -d BBMAP ]
+if [ -d ${BBMAP} ]
 then
 	:
 else
-	tar -xzvf plant_239_U100.tar.gz
-
+	tar -xzvf bbmap.tar.gz
+fi
 
 if [ -d ${DATABASES_DIR} ]
 then
 	:
 else
 	mkdir databases 
+fi
 
 cd databases
 
 if [ -d ${DATABASES_DIR}/plant_239_U100 ] 
 then
+    #echo "$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
     :
 else
     mkdir plant_239_U100
@@ -545,7 +548,6 @@ do
 		myblastn $FILEPATH ${DATABASES_DIR}/nt ${FILENAME}_nt_blastn.txt
 		myblastx $FILEPATH ${DATABASES_DIR}/nt ${FILENAME}_nt_blastx.txt
 	fi
-
 done
 
 
