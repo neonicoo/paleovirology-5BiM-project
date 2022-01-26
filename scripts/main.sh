@@ -5,7 +5,7 @@
 ##################################### Initial settings  ######################################
 ##############################################################################################
 
-# donne le repertoire du script : 
+## donne le repertoire du script : 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 #echo "$SCRIPT_DIR"
 DATA_DIR="${SCRIPT_DIR}/data"
@@ -13,6 +13,9 @@ SIRNA_DIR="$DATA_DIR/siRNA"
 VANA_DIR="$DATA_DIR/VANA"
 DATABASES_DIR="${SCRIPT_DIR}/databases"
 BBMAP="${SCRIPT_DIR}/bbmap"
+KRAKEN_DIR="${SCRIPT_DIR}/kraken_db"
+BLAST_DIR="${DATA_DIR}/blast"
+SRC_DIR="$${SCRIPT_DIR}/src"
 
 if [ -d ${BBMAP} ]
 then
@@ -167,7 +170,7 @@ if [ "$VANA" = true ]; then
 	cd $VANA_DIR
 	echo "$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-	FILES="raw/"
+	FILES="raw"
 	mkdir -p QC
 	mkdir -p QC/fastqc
 	mkdir -p log
@@ -193,7 +196,7 @@ if [ "$VANA" = true ]; then
 
 	R1="R1"
 	R2="R2"
-	for namefileR1 in $FILES*R1*.fastq
+	for namefileR1 in $FILES/*R1*.fastq
 	do
 	  #echo "$(basename $namefileR1 .fastq)"
 	  namefileR1=$(basename $namefileR1 .fastq)
@@ -427,69 +430,22 @@ if [ "$siRNA" = true ]; then
     cp -p merged_SPAdes.fasta ${f}_compressed_SPAdes.fasta
 
     compress_myfasta ${f}_compressed_SPAdes.fasta
-    mv ${f}_compressed_SPAdes.fasta_compressed.fa ${f}_compressed_SPAdes.fa
+    mv ${f}_compressed_SPAdes.fasta_compressed.fa ${f}_novel_compressed_SPAdes.fa
 	done
 fi
 
 ########################################## Blast #############################################
 ##############################################################################################
 
-
 if [ -d ${BLAST_DIR} ]
 then
 	:
 else
-	mkdir ${DATA_DIR}/blast
-	BLAST_DIR="${DATA_DIR}/blast"
+	mkdir ${BLAST_DIR}
 	mkdir ${BLAST_DIR}/siRNA
 	mkdir ${BLAST_DIR}/VANA
 	echo "Created $BLAST_DIR"
 fi
-
-
-printf "\nHello, this is the blast step.\n"
-UserChoice=0
-while [[ $UserChoice != [123] ]]
-do
-  echo "---------------------------------"
-  printf "Which data do you want to assemble ? \n Please type :\n \"1\" for VANA\n \"2\" for siRNA\n \"3\" for both\n \"q\" to quit.\n"
-  read -p 'Data to preprocess : ' UserChoice
-  if [[ $UserChoice == [qQ] ]]; then
-    break
-  fi
-done
-
-
-siRNA=false
-VANA=false
-
-case  $UserChoice in 
-
-	3)
-	  siRNA=true
-	  VANA=true
-	;;
-	2)
-	  siRNA=true
-	;;
-	1)
-	  VANA=true
-	;;
-esac
-
-if [ siRNA = true ]
-then
-	for sample in ${SIRNA_DIR}/trimmed_cutadapt
-	do
-		if [[ -d sample ]]
-		then
-			cd ${SIRNA_DIR}/trimmed_cutadapt/$sample/SPAdes 
-			cp -p ./$sample_compressed_SPAdes.fa ${BLAST_DIR}/BLAST_SIRNA/
-		fi
-	done
-fi
-
-
 
 VIRUSDETECTDB_DIR="${DATABASES_DIR}/plant_239_U100"
 NR_DIR="${DATABASES_DIR}/nr"
@@ -515,23 +471,97 @@ function myblastx ()
 			-outfmt 6
 }
 
-cd BLAST_DIR
+function virusdetect_blast ()
+{
+	FILENAME=$(basename $1 .fa)
 
-cp -p ${VANA_DIR}/trimmed_cutadapt/SPAdes/contigs.fasta .
-cp -p ${SIRNA_DIR}/trimmed_cutadapt/SPAdes/compressed_SPAdes.fa .
+	echo "Blastn on virusdetect vrl_plant DB"
+	myblastn $1 ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100 $FILENAME_virusdetect_blastn.txt
+	echo "Blastx on virusdetect vrl_plant DB"
+	myblastx $1 ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100_prot $FILENAME_virusdetect_blastx.txt
 
-for FILE in $BLAST_DIR
+	
+	if [[ -s $FILENAME_virusdetect_blastn.txt ]]
+	then 
+		echo "Virus identification from blastn output with python3 scripts"
+		python3 ${SRC_DIR}/blastn_virus_identity.py $FILENAME_virusdetect_blastn.txt $3 $FILENAME_virusdetect_blastn_taxon
+	fi
+	if [[ -s $FILENAME_virusdetect_blastx.txt ]]
+	then 
+		echo "Virus identification from blastx output with python3 scripts"
+		python3 ${SRC_DIR}/blastx_virus_identify.py $FILENAME_virusdetect_blastx.txt $3 $FILENAME_virusdetect_blastx_taxon
+	fi
+}
+
+function nrnt_blast ()
+{
+	FILENAME=$(basename $1 .fa)
+
+	echo "Blastn on nr DB"
+	myblastn $1 ${DATABASES_DIR}/nr $FILENAME_nr_blastn.txt
+	echo "Blastx on nr DB"
+	myblastx $1 ${DATABASES_DIR}/nr $FILENAME_nt_blastx.txt
+	echo "Blastn on nt DB"
+	myblastn $1 ${DATABASES_DIR}/nt $FILENAME_nt_blastn.txt
+	echo "Blastx on nt DB"
+	myblastx $1 ${DATABASES_DIR}/nt $FILENAME_nt_blastx.txt
+}
+
+
+printf "\nHello, this is the blast step.\n"
+UserChoice=0
+while [[ $UserChoice != [123] ]]
 do
-  	#FILE="${FILEPATH##*/}"
-	FILENAME="${FILE%.*}"
+  echo "---------------------------------"
+  printf "Which data do you want to blast ? \n Please type :\n \"1\" for VANA\n \"2\" for siRNA\n \"3\" for both\n \"q\" to quit.\n"
+  read -p 'Data to preprocess : ' UserChoice
+  if [[ $UserChoice == [qQ] ]]; then
+    break
+  fi
+done
+
+
+siRNA=false
+VANA=false
+
+case  $UserChoice in 
+
+	3)
+	  siRNA=true
+	  VANA=true
+	;;
+	2)
+	  siRNA=true
+	;;
+	1)
+	  VANA=true
+	;;
+esac
+
+#####################
+# siRNA #############
+#####################
+
+if [ "$siRNA" = true ]
+then
+	for sample_dir in ${SIRNA_DIR}/trimmed_cutadapt/*_trimmed
+	do
+		cd $sample_dir
+		#echo "$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+		sample=$(basename $sample_dir)
+		echo "Copy the assembled siRNA $sample"
+		cd $sample_dir/SPAdes/ 
+		cp  -p ${sample}_novel_compressed_SPAdes.fa ${BLAST_DIR}/siRNA/
+	done
 
 	UserChoice=0
 	while [[ $UserChoice != [12] ]]
 	do 
 		echo "---------------------------------"
-		printf "Which database you want to give to blast ? \n Please type :\n \"1\" for Virusdetect vrl_plant DB\n \"2\" for nr and nt DB\n \"3\" for both nrnt and virusdetect \n "
-	  	read -p 'Data to preprocess : ' UserChoice
-	  	if [[ $UserChoice == [qQ] ]]; then
+		printf "Which database you want to give to blast your siRNA contigs ? \n Please type :\n \"1\" for Virusdetect vrl_plant DB\n \"2\" for nr and nt DB\n \"3\" for both nrnt and virusdetect \n "
+	  	read -p 'Which reference database  : ' UserChoice
+	  	if [[ $UserChoice == [qQ] ]]
+	  	then
 	    	break
 	  	fi
 	done
@@ -552,31 +582,28 @@ do
 		;;
 	esac
 
-
 	if [ "$virusdetect" = true ]
 	then
-		myblastn $FILEPATH ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100 ${FILENAME}_virusdetect_blastn.txt
-		myblastx $FILEPATH ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100_prot ${FILENAME}_virusdetect_blastx.txt
-
-		if [[ -s ${FILENAME}_virusdetect_blastn.txt ]]
-		then 
-			python3 ./blastn_virus_identity.py ${FILENAME}_virusdetect_blastn.txt $3 ${FILENAME}_virusdetect_blastn_taxon
-		fi
-		if [[ -s ${FILENAME}_virusdetect_blastx.txt ]]
-		then 
-			python3 ./blastx_virus_identify.py ${FILENAME}_virusdetect_blastx.txt $3 ${FILENAME}_virusdetect_blastx_taxon
-		fi
+		for file in ${BLAST_DIR}/siRNA/*.fa
+		do
+			virusdetect_blast $file
+		done
 	fi
+fi
 
-	if [ "$nrnt" = true ]
-	then
-		myblastn $FILEPATH ${DATABASES_DIR}/nr ${FILENAME}_nr_blastn.txt
-		myblastx $FILEPATH ${DATABASES_DIR}/nr ${FILENAME}_nt_blastx.txt
-		myblastn $FILEPATH ${DATABASES_DIR}/nt ${FILENAME}_nt_blastn.txt
-		myblastx $FILEPATH ${DATABASES_DIR}/nt ${FILENAME}_nt_blastx.txt
-	fi
-done
 
+#####################
+# VANA ##############
+#####################
+
+if [ "$VANA" = true ]
+then
+	:
+fi
+
+
+conda deactivate
+echo "paleogenomic conda env OFF"
 
 conda deactivate
 echo "paleogenomic conda env OFF"

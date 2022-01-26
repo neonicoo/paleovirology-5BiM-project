@@ -73,11 +73,11 @@ do
 	mkdir 3_viral
 # kraken sur recup 
 	# 1e etape
-	kraken2 --threads 8 -db ~/kraken_db/no_viral_18 --unclassified-out 1_no_viraldb/potential_viral.fa --classified-out 1_no_viraldb/non_viral.fa --report 1_no_viraldb/report_no_viral --use-names $DOSSIER_siRNA/$namefileR1/SPAdes/compressed_SPAdes.fasta_Compressed.fa
+	kraken2 --threads 8 -db ~/kraken_db/kraken2_no_viral_db --unclassified-out 1_no_viraldb/potential_viral.fa --classified-out 1_no_viraldb/non_viral.fa --report 1_no_viraldb/report_no_viral --use-names $DOSSIER_siRNA/$namefileR1/SPAdes/compressed_SPAdes.fasta_Compressed.fa
 	# 2e etape
-	kraken2 --threads 8 -db ~/kraken_db/plant_18 --unclassified-out 2_plant/potential_viral.fa --classified-out 2_plant/plant.fa --report 2_plant/report_plant --use-names $DOSSIER_siRNA/$namefileR1/kraken/SPAdes/1_no_viraldb/potential_viral.fa
+	kraken2 --threads 8 -db ~/kraken_db/kraken2_plant --unclassified-out 2_plant/potential_viral.fa --classified-out 2_plant/plant.fa --report 2_plant/report_plant --use-names $DOSSIER_siRNA/$namefileR1/kraken/SPAdes/1_no_viraldb/potential_viral.fa
 	# 3e etape 
-	kraken2 --threads 8 -db ~/kraken_db/viral18 --unclassified-out 3_viral/non_viral.fa --classified-out 3_viral/viral.fa --report 3_viral/report_viral --use-names $DOSSIER_siRNA/$namefileR1/SPAdes/compressed_SPAdes.fasta_Compressed.fa
+	kraken2 --threads 8 -db ~/kraken_db/kraken_viral --unclassified-out 3_viral/non_viral.fa --classified-out 3_viral/viral.fa --report 3_viral/report_viral --use-names $DOSSIER_siRNA/$namefileR1/SPAdes/compressed_SPAdes.fasta_Compressed.fa
 	
 done
 
