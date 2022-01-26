@@ -539,7 +539,7 @@ function virusdetect_blast ()
 		  	-db ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100 \
 		  	-out ${outputn}\
 		  	-num_threads 8 \
-		  	-evalue 0.01 \
+		  	-evalue 0.001 \
 		  	-outfmt 6
 
 	echo "Blastx on virusdetect vrl_plant DB"
@@ -547,7 +547,7 @@ function virusdetect_blast ()
 			-db ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100_prot\
 			-out ${outputx}\
 			-num_threads 8 \
-			-evalue 0.01 \
+			-evalue 0.001 \
 			-outfmt 6
 
 	
