@@ -88,6 +88,9 @@ else
     exit
 fi
 
+##################################### Pre-processing #########################################
+##############################################################################################
+
 
 printf "\nHello, this is the preprocessing step for VANA and siRNA data.\n\n \nPlease make sure that :\nYour data are in the same root folder as this script meaning :\n"
 printf "in the data/ folder there should be :\n"
