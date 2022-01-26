@@ -356,65 +356,74 @@ if [ "$VANA" = true ]; then
 
 	for fileR1 in $trimmed_VANA/*R1*.fastq
 	do
-		fileR1=$(basename $fileR1 .fastq)
-		cd $trimmed_VANA/$fileR1
+		file=$(basename $fileR1 .fastq)
+		mkdir ${file}
+		cd $file
+		echo "$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 		mkdir filtered_reads_viral -p
+		cd filtered_reads_viral
 
-		if [ "$elim1" = true]; then
-			cd $trimmed_VANA/$fileR1/filtered_reads_viral
+		if [[ "$elim1" = true ]]; then
+			echo "$file: Create no_viral dir"
 			mkdir no_viral
 			cd no_viral
 			#kraken
-			kraken2 --threads 10 --db ~/kraken_db/kraken2_no_viral_db --unclassified-out potential_viralR1.fa --classified-out non_viralR1.fa --report report_no_viralR1 --use-names "$trimmed_VANA/$fileR1.fastq"
+			kraken2 --threads 10 --db ${KRAKEN_DIR}/kraken2_no_viral_db --unclassified-out potential_viralR1.fa --classified-out non_viralR1.fa --report report_no_viralR1 --use-names "$trimmed_VANA/$fileR1.fastq"
+			cd ..
 		fi
 
 		if [ "$elim2" = true]; then
-			cd $trimmed_VANA/$fileR1/filtered_reads_viral
+			echo "$file: Create plant dir"
 			mkdir plant
 			cd plant
 			#kraken
-			kraken2 --threads 10 --db ~/kraken_db/kraken2_plant --unclassified-out potential_viralR1.fa --classified-out plantR1.fa --report report_plantR1 --use-names ../no_viral/potential_viral.fa
+			kraken2 --threads 10 --db ${KRAKEN_DIR}/kraken2_no_viral_db --unclassified-out potential_viralR1.fa --classified-out non_viralR1.fa --report report_no_viralR1 --use-names ../no_viral/potential_viral.fa
+			cd ..
 		fi
 
 		if [ "$map" = true]; then
-			cd $trimmed_VANA/$fileR1/filtered_reads_viral
+			echo "$file: Create viral dir"
 			mkdir viral
 			cd viral
 			#kraken
-			kraken2 --threads 10 --db ~/kraken_db/kraken2_no_viral_db --unclassified-out potential_viralR1.fa --classified-out non_viralR1.fa --report report_no_viralR1 --use-names "$trimmed_VANA/$fileR1.fastq"
+			kraken2 --threads 10 --db ${KRAKEN_DIR}/kraken2_no_viral_db --unclassified-out potential_viralR1.fa --classified-out non_viralR1.fa --report report_no_viralR1 --use-names "$trimmed_VANA/$fileR1.fastq"
+			cd ..
 		fi 
 	done
 
 	for fileR2 in $trimmed_VANA/*R2*.fastq
 	do
-		fileR2=$(basename $fileR2 .fastq)
-		dirR2=$(basename ${fileR2/R2/R1} .fastq)
+		file=$(basename $fileR2 .fastq)
+		dirR2=$(basename ${file/R2/R1} .fastq)
 		cd $trimmed_VANA/$dirR2
 		mkdir filtered_reads_viral -p
 		cd filtered_reads_viral
 
 		if [ "$elim1" = true]; then
-			cd $trimmed_VANA/$dirR2/filtered_reads_viral
+			echo "$file: Create no_viral dir"
 			mkdir no_viral
 			cd no_viral
 			#kraken
-			kraken2 --threads 10 --db ~/kraken_db/kraken2_no_viral_db --unclassified-out potential_viralR2.fa --classified-out non_viralR2.fa --report report_no_viralR2 --use-names "$trimmed_VANA/$fileR2.fastq"
+			kraken2 --threads 10 --db ~/kraken_db/kraken2_no_viral_db --unclassified-out potential_viralR2.fa --classified-out non_viralR2.fa --report report_no_viralR2 --use-names "$trimmed_VANA/$file.fastq"
+			cd ..
 		fi
 
 		if [ "$elim2" = true]; then
-			cd $trimmed_VANA/$dirR2/filtered_reads_viral
+			echo "$file: Create plant dir"
 			mkdir plant
 			cd plant
 			#kraken
 			kraken2 --threads 10 --db ~/kraken_db/kraken2_plant --unclassified-out potential_viralR2.fa --classified-out plantR2.fa --report report_plantR2 --use-names ../no_viral/potential_viral.fa
+			cd ..
 		fi
 
 		if [ "$map" = true]; then
-			cd $trimmed_VANA/$dirR2/filtered_reads_viral
+			echo "$file: Create viral dir"
 			mkdir viral
 			cd viral
 			#kraken
-			kraken2 --threads 10 --db ~/kraken_db/kraken2_no_viral_db --unclassified-out potential_viralR2.fa --classified-out non_viralR2.fa --report report_no_viralR2 --use-names "$trimmed_VANA/$fileR2.fastq"
+			kraken2 --threads 10 --db ~/kraken_db/kraken2_no_viral_db --unclassified-out potential_viralR2.fa --classified-out non_viralR2.fa --report report_no_viralR2 --use-names "$trimmed_VANA/$file.fastq"
+			cd ..
 		fi 
 	done
 fi
