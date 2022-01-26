@@ -170,7 +170,7 @@ if [ "$VANA" = true ]; then
 	cd $VANA_DIR
 	echo "$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-	FILES="raw/"
+	FILES="raw"
 	mkdir -p QC
 	mkdir -p QC/fastqc
 	mkdir -p log
@@ -196,7 +196,7 @@ if [ "$VANA" = true ]; then
 
 	R1="R1"
 	R2="R2"
-	for namefileR1 in $FILES*R1*.fastq
+	for namefileR1 in $FILES/*R1*.fastq
 	do
 	  #echo "$(basename $namefileR1 .fastq)"
 	  namefileR1=$(basename $namefileR1 .fastq)
@@ -513,7 +513,7 @@ UserChoice=0
 while [[ $UserChoice != [123] ]]
 do
   echo "---------------------------------"
-  printf "Which data do you want to assemble ? \n Please type :\n \"1\" for VANA\n \"2\" for siRNA\n \"3\" for both\n \"q\" to quit.\n"
+  printf "Which data do you want to blast ? \n Please type :\n \"1\" for VANA\n \"2\" for siRNA\n \"3\" for both\n \"q\" to quit.\n"
   read -p 'Data to preprocess : ' UserChoice
   if [[ $UserChoice == [qQ] ]]; then
     break
