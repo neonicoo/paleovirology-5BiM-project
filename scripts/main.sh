@@ -505,7 +505,7 @@ function virusdetect_blast ()
 	if [[ -s ${outputn} ]]
 	then 
 		echo "Virus identification from blastn $1 with python3 scripts"
-		python3 ${SRC_DIR}/blastn_virus_identity.py \
+		python3 ${SRC_DIR}/blastn_virus_identify.py \
 						${outputn} \
 						$VIRUSDETECTDB_DIR/ \
 						${outputn/_virusdetect_blastn.txt/}_virusdetect_blastn_taxon
@@ -513,7 +513,7 @@ function virusdetect_blast ()
 	if [[ -s ${outputx} ]]
 	then 
 		echo "Virus identification from blastx $1 with python3 scripts"
-		python3 ${SRC_DIR}/blastx_virus_identity.py \
+		python3 ${SRC_DIR}/blastx_virus_identify.py \
 						${outputx} \
 						$VIRUSDETECTDB_DIR/ \
 						${outputx/_virusdetect_blastx.txt/}_virusdetect_blastx_taxon
@@ -614,6 +614,10 @@ then
 		do
 			virusdetect_blast $file
 		done
+
+		mkdir ${BLAST_DIR}/siRNA/virusdetect_results
+		mv ${BLAST_DIR}/siRNA/*_virusdetect_blast{n,x}_taxon.txt ${BLAST_DIR}/siRNA/virusdetect_results
+		cat ${BLAST_DIR}/siRNA/virusdetect_results/*taxon.txt > vrl_plant_results_siRNA_all.txt
 	fi
 fi
 
@@ -671,6 +675,10 @@ then
 		do
 			virusdetect_blast $file
 		done
+
+		mkdir ${BLAST_DIR}/VANA/virusdetect_results
+		mv ${BLAST_DIR}/VANA/*_virusdetect_blast{n,x}_taxon.txt ${BLAST_DIR}/VANA/virusdetect_results
+		cat ${BLAST_DIR}/VANA/virusdetect_results/*taxon.txt > vrl_plant_results_VANA_all.txt
 	fi
 fi
 
