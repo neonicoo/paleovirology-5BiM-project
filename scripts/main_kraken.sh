@@ -14,22 +14,19 @@ VANA_DIR="$DATA_DIR/VANA"
 DATABASES_DIR="${SCRIPT_DIR}/databases"
 BBMAP="${SCRIPT_DIR}/bbmap"
 KRAKEN_DIR="${SCRIPT_DIR}/kraken_db"
+BLAST_DIR="${DATA_DIR}/blast"
+SRC_DIR="${SCRIPT_DIR}/src"
+VIRUSDETECTDB_DIR="${DATABASES_DIR}/plant_239_U100"
+NR_DIR="${DATABASES_DIR}/nr"
+NT_DIR="${DATABASES_DIR}/nt"
+
 
 if [ -d ${BBMAP} ]
 then
 	:
 else
 	tar -xzvf bbmap.tar.gz
-fi
-
-if [ -d $KRAKEN_DIR ]
-then
-	:
-else
-	echo "Kraken database not found \n"
-	echo "Would you like to dowload and initialize it ? \n"
-	echo "Be aware, this step can take a few time \n"
-	mkdir $KRAKEN_DIR
+	rm -rf bbmap.tar.gz
 fi
 
 if [ -d ${DATABASES_DIR} ]
@@ -41,9 +38,8 @@ fi
 
 cd databases
 
-if [ -d ${DATABASES_DIR}/plant_239_U100 ] 
+if [ -d $VIRUSDETECTDB_DIR ] 
 then
-    #echo "$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
     :
 else
     mkdir plant_239_U100
@@ -53,13 +49,65 @@ else
 	tar -xzvf plant_239_U100.tar.gz --strip-components=1
 
 	wget bioinfo.bti.cornell.edu/ftp/program/VirusDetect/virus_database/v239/vrl_genbank.info.gz
-	tar -xzvf vrl_genbank.info.gz --strip-components=1
+	gunzip vrl_genbank.info.gz 
 	wget bioinfo.bti.cornell.edu/ftp/program/VirusDetect/virus_database/v239/vrl_idmapping.gz
-	tar -xzvf vrl_idmapping.gz --strip-components=1
-	rm -rf plant_239_U100.tar.gz  vrl_genbank.info.gzvrl_idmapping.gz
+	gunzip vrl_idmapping.gz
 	cd ..
 fi
 
+if [ -d $NR_DIR ] 
+then
+    :
+else
+    printf "NT database is missing, would you like to download it ? \n"
+    printf "This might take quite a few time\n"
+    
+    UserChoice=0
+	while [[ $UserChoice != [12] ]]
+	do
+	  echo "---------------------------------"
+	  printf "Please type : \n \"1\" for YES\n \"2\" for NO\n \"q\" to quit.\n"
+	  read -p 'Dowload NR DB for blast ? : ' UserChoice
+	  if [[ $UserChoice == [qQ] ]]; then
+	    break
+	  fi
+	done
+	if [[ $UserChoice == 1 ]]
+	then
+		mkdir $NR_DIR
+		cd $NR_DIR
+		update_blastdb nr
+	else
+		break
+	fi
+fi
+
+if [ -d $NT_DIR ] 
+then
+    :
+else
+    printf "NT database is missing, would you like to download it ? \n"
+    printf "This might take quite a few time\n"
+    
+    UserChoice=0
+	while [[ $UserChoice != [12] ]]
+	do
+	  echo "---------------------------------"
+	  printf "Please type : \n \"1\" for YES\n \"2\" for NO\n \"q\" to quit.\n"
+	  read -p 'Dowload NT DB for blast ? : ' UserChoice
+	  if [[ $UserChoice == [qQ] ]]; then
+	    break
+	  fi
+	done
+	if [[ $UserChoice == 1 ]]
+	then
+		mkdir $NT_DIR
+		cd $NT_DIR
+		update_blastdb nt
+	else
+		break
+	fi
+fi
 
 if conda env list | grep -q paleogenomic
 then
@@ -648,7 +696,7 @@ if [ "$VANA" = true ]; then
 	done
 
 	#Choix des données à utiliser: si krakened, choix; sinon, processed anyway
-	if [[ $krakened==true ]]; then
+	if [ "$krakened" = true ]; then
 		UserChoice=0
 		while [[ $UserChoice != [12] ]]
 		do
@@ -679,7 +727,7 @@ if [ "$VANA" = true ]; then
 		processed=true
 	fi
 	
-	if [[ $processed=true ]]; then
+	if [ "$processed" = true ]; then
 
 		echo "Assembling preprocessed VANA data"
 		FILES_FA="${VANA_DIR}/trimmed_cutadapt"
@@ -714,7 +762,7 @@ if [ "$VANA" = true ]; then
 	  	done
 	fi
 	
-	if [[ $filtered=true ]]; then
+	if [ "$filtered" = true ]; then
 
 		echo "Assembling preprocessed VANA data"
 		FILES_BASE="${VANA_DIR}/trimmed_cutadapt"
@@ -728,8 +776,7 @@ if [ "$VANA" = true ]; then
 				for meth in ${FILES_BASE}/$dirR1/filtered_reads_viral/
 				do
 					cd ${FILES_BASE}/$dirR1/filtered_reads_viral/$meth
-					
-					#JSUIS LARGUEE 
+					 
 					mkdir SPAdes_filtered
 					namefileR1="potential_viralR1"
 					namefileR2="potential_viralR2"
@@ -780,7 +827,7 @@ if [ "$siRNA" = true ]; then
 	done
 
 	#Choix des données à utiliser: si krakened, choix; sinon, processed anyway
-	if [[ $krakened==true ]]; then
+	if [ "$krakened" == true ]; then
 		UserChoice=0
 		while [[ $UserChoice != [12] ]]
 		do
@@ -811,7 +858,7 @@ if [ "$siRNA" = true ]; then
 		processed=true
 	fi
 	
-	if [[ $processed=true ]]; then
+	if [ "$processed" = true ]; then
 		
 		echo "Assembling siRNA data"
 		FILES_FA="${SIRNA_DIR}/trimmed_cutadapt/"
@@ -833,7 +880,7 @@ if [ "$siRNA" = true ]; then
 		done
 	fi
 	
-	if [[ $filtered=true ]]; then
+	if [ "$filtered" = true ]; then
 		
 		echo "Assembling siRNA data"
 		FILES_BASE="${SIRNA_DIR}/trimmed_cutadapt/"
@@ -860,6 +907,254 @@ if [ "$siRNA" = true ]; then
 		done
 	fi
 
-		
+########################################## Blast #############################################
+##############################################################################################
+
+if [ -d ${BLAST_DIR} ]
+then
+	:
+else
+	mkdir ${BLAST_DIR}
+	mkdir ${BLAST_DIR}/siRNA
+	mkdir ${BLAST_DIR}/VANA
+	echo "Created $BLAST_DIR"
+fi
+
+
+
+function virusdetect_blast ()
+{
+	echo "$1"
+
+	outputn=${1/_trimmed/}_virusdetect_blastn.txt
+	outputx=${1/_trimmed/}_virusdetect_blastx.txt
+
+	echo "Blastn on virusdetect vrl_plant DB"
+	blastn -query $1 \
+		  	-db ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100 \
+		  	-out ${outputn}\
+		  	-num_threads 8 \
+		  	-evalue 0.01 \
+		  	-outfmt 6
+
+	echo "Blastx on virusdetect vrl_plant DB"
+	blastx -query $1 \
+			-db ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100_prot\
+			-out ${outputx}\
+			-num_threads 8 \
+			-evalue 0.01 \
+			-outfmt 6
+
+	
+	if [[ -s ${outputn} ]]
+	then 
+		echo "Virus identification from blastn $1 with python3 scripts"
+		python3 ${SRC_DIR}/blastn_virus_identify.py \
+						${outputn} \
+						$VIRUSDETECTDB_DIR/ \
+						${outputn/_virusdetect_blastn.txt/}_virusdetect_blastn_taxon
+	fi
+	if [[ -s ${outputx} ]]
+	then 
+		echo "Virus identification from blastx $1 with python3 scripts"
+		python3 ${SRC_DIR}/blastx_virus_identify.py \
+						${outputx} \
+						$VIRUSDETECTDB_DIR/ \
+						${outputx/_virusdetect_blastx.txt/}_virusdetect_blastx_taxon
+	fi
+}
+
+function nrnt_blast ()
+{
+
+	outputn=${1/_trimmed/}_nt_result_blastn.txt
+	outputx=${1/_trimmed/}_nr_result_blastx.txt
+
+	echo "Blastx on nr DB"
+	blastx -query $1 \
+			-db ${DATABASES_DIR}/nr \
+			-out $outputx \
+			-num_threads 12 \
+			-evalue 0.0001 \
+			-outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore staxids sscinames scomnames sskingdoms stitle" \
+			-max_target_seqs 2
+
+	echo "Blastn on nt DB"
+	blastn -query $1 \
+			-db ${DATABASES_DIR}/nt \
+			-out $outputn \
+			-num_threads 12 \
+			-evalue 0.0001 \
+			-outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore staxids sscinames scomnames sskingdoms stitle" \
+			-max_target_seqs 2
+	
+}
+
+
+printf "\nHello, this is the blast step.\n"
+UserChoice=0
+while [[ $UserChoice != [123] ]]
+do
+  echo "---------------------------------"
+  printf "Which data do you want to blast? \n Please type :\n \"1\" for VANA\n \"2\" for siRNA\n \"3\" for both\n \"q\" to quit.\n"
+  read -p 'Data to preprocess : ' UserChoice
+  if [[ $UserChoice == [qQ] ]]; then
+    break
+  fi
+done
+
+
+siRNA=false
+VANA=false
+
+case  $UserChoice in 
+
+	3)
+	  siRNA=true
+	  VANA=true
+	;;
+	2)
+	  siRNA=true
+	;;
+	1)
+	  VANA=true
+	;;
+esac
+
+#####################
+# siRNA #############
+#####################
+
+if [ "$siRNA" = true ]
+then
+	for sample_dir in ${SIRNA_DIR}/trimmed_cutadapt/*_trimmed
+	do
+		cd $sample_dir
+		#echo "$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+		sample=$(basename $sample_dir)
+		echo "Copy the SPAdes assembled siRNA $sample"
+		cd $sample_dir/SPAdes/ 
+		cp  -p ${sample}_novel_compressed_SPAdes.fa ${BLAST_DIR}/siRNA/
+	done
+
+	UserChoice=0
+	while [[ $UserChoice != [123] ]]
+	do 
+		echo "---------------------------------"
+		printf "Which database you want to give to blast your siRNA contigs ? \n Please type :\n \"1\" for Virusdetect vrl_plant DB\n \"2\" for nr and nt DB\n \"3\" for both nrnt and virusdetect \n "
+	  	read -p 'Which reference database  : ' UserChoice
+	  	if [[ $UserChoice == [qQ] ]]
+	  	then
+	    	break
+	  	fi
+	done
+
+	virusdetect=false
+	nrnt=false
+
+	case $UserChoice in 
+		1)
+		 	virusdetect=true
+		;;
+		2)
+		 	nrnt=true
+		;;
+		3)
+			virusdetect=true
+			nrnt=true
+		;;
+	esac
+
+	if [ "$virusdetect" = true ]
+	then
+		for file in ${BLAST_DIR}/siRNA/*.fa
+		do
+			virusdetect_blast $file
+		done
+
+		mkdir ${BLAST_DIR}/siRNA/virusdetect_results
+		mv ${BLAST_DIR}/siRNA/*_virusdetect_blast{n,x}_taxon.txt ${BLAST_DIR}/siRNA/virusdetect_results
+		cat ${BLAST_DIR}/siRNA/virusdetect_results/*taxon.txt > vrl_plant_results_siRNA_all.txt
+	fi
+
+	if [ "$nrnt" = true ]
+	then
+		for file in ${BLAST_DIR}/siRNA/*.fa
+		do
+			nrnt_blast $file
+		done
+	fi
+
+fi
+
+
+#####################
+# VANA ##############
+#####################
+
+if [ "$VANA" = true ]
+then
+	for sample_dir in ${VANA_DIR}/trimmed_cutadapt/*_trimmed
+	do
+		cd $sample_dir
+		echo "$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+		sample=$(basename $sample_dir)
+		echo "Copy the IDBA assembled VANA $sample"
+		cd $sample_dir/idba_ud_out/ 
+		cp  -p contig.fa ${BLAST_DIR}/VANA/${sample}_idba_ud_contigs.fa
+		echo "Copy the SPAdes META assembled VANA $sample"
+		cd $sample_dir/outputMETA/
+		cp  -p contigs.fasta ${BLAST_DIR}/VANA/${sample}_spades_meta_contigs.fasta
+	done
+
+	UserChoice=0
+	while [[ $UserChoice != [123] ]]
+	do 
+		echo "---------------------------------"
+		printf "Which database you want to give to blast your VANA contigs ? \n Please type :\n \"1\" for Virusdetect vrl_plant DB\n \"2\" for nr and nt DB\n \"3\" for both nrnt and virusdetect \n "
+	  	read -p 'Which reference database  : ' UserChoice
+	  	if [[ $UserChoice == [qQ] ]]
+	  	then
+	    	break
+	  	fi
+	done
+
+	virusdetect=false
+	nrnt=false
+
+	case $UserChoice in 
+		1)
+		 	virusdetect=true
+		;;
+		2)
+		 	nrnt=true
+		;;
+		3)
+			virusdetect=true
+			nrnt=true
+		;;
+	esac
+
+	if [ "$virusdetect" = true ]
+	then
+		for file in ${BLAST_DIR}/VANA/*.fa*
+		do
+			virusdetect_blast $file
+		done
+
+		mkdir ${BLAST_DIR}/VANA/virusdetect_results
+		mv ${BLAST_DIR}/VANA/*_virusdetect_blast{n,x}_taxon.txt ${BLAST_DIR}/VANA/virusdetect_results
+		cat ${BLAST_DIR}/VANA/virusdetect_results/*taxon.txt > vrl_plant_results_VANA_all.txt
+	fi
+
+	if [ "$nrnt" = true ]
+	then
+		for file in ${BLAST_DIR}/VANA/*.fa
+		do
+			nrnt_blast $file
+		done
+	fi
+fi
+
 conda deactivate
 echo "paleogenomic conda env OFF"
