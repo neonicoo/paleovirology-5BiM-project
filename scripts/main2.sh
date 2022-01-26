@@ -13,12 +13,23 @@ SIRNA_DIR="$DATA_DIR/siRNA"
 VANA_DIR="$DATA_DIR/VANA"
 DATABASES_DIR="${SCRIPT_DIR}/databases"
 BBMAP="${SCRIPT_DIR}/bbmap"
+KRAKEN_DIR="${SCRIPT_DIR}/kraken_db"
 
 if [ -d ${BBMAP} ]
 then
 	:
 else
 	tar -xzvf bbmap.tar.gz
+fi
+
+if [ -d $KRAKEN_DIR ]
+then
+	:
+else
+	echo "Kraken database not found \n"
+	echo "Would you like to dowload and initialize it ? \n"
+	echo "Be aware, this step can take a few time \n"
+	mkdir $KRAKEN_DIR
 fi
 
 if [ -d ${DATABASES_DIR} ]
@@ -416,37 +427,46 @@ if [ "$siRNA" = true ]; then
 	# Creation directories :
 	cd $SCRIPT_DIR
 	echo "Creating siRNA directories..."
-	trimmed_siRNA="$siRNA_DIR/trimmed_cutadapt"
+	trimmed_siRNA="$SIRNA_DIR/trimmed_cutadapt"
 	cd $trimmed_siRNA
 
 	for fileR1 in $trimmed_siRNA/*.fastq
 	do
 		file=$(basename $fileR1 .fastq)
-		cd $trimmed_VANA/$file
+		mkdir ${file}
+		cd $file
+		echo "$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 		mkdir filtered_reads_viral -p
+		cd filtered_reads_viral
 
-		if [ "$elim1" = true]; then
-			cd $trimmed_VANA/$file/filtered_reads_viral
+		if [[ "$elim1" = true ]]
+		then
+			echo "Create no_viral dir"
 			mkdir no_viral
 			cd no_viral
 			#kraken
-			kraken2 --threads 10 --db ~/kraken_db/kraken2_no_viral_db --unclassified-out potential_viral.fa --classified-out non_viral.fa --report report_no_viral --use-names "$trimmed_siRNA/fileR1.fastq"
+			kraken2 --threads 10 --db ${KRAKEN_DIR}/kraken2_no_viral_db --unclassified-out potential_viral.fa --classified-out non_viral.fa --report report_no_viral --use-names "$trimmed_siRNA/fileR1.fastq"
+			cd ..
 		fi
 
-		if [ "$elim2" = true]; then
-			cd $trimmed_VANA/$file/filtered_reads_viral
+		if [[ "$elim2" = true ]]
+		then
+			echo "Create plant_dir"
 			mkdir plant
 			cd plant
 			#kraken
-			kraken2 --threads 10 --db ~/kraken_db/kraken2_plant --unclassified-out potential_viral.fa --classified-out plant.fa --report report_plant --use-names ../no_viral/potential_viral.fa
+			kraken2 --threads 10 --db ${KRAKEN_DIR}/kraken2_plant --unclassified-out potential_viral.fa --classified-out plant.fa --report report_plant --use-names ../no_viral/potential_viral.fa
+			cd ..
 		fi
 
-		if [ "$map" = true]; then
-			cd $trimmed_VANA/$file/filtered_reads_viral
+		if [[ "$map" = true ]]
+		then
+			echo "Create viral dir"
 			mkdir viral
 			cd viral
 			#kraken
-			kraken2 --threads 10 --db ~/kraken_db/kraken2_no_viral_db --unclassified-out potential_viral.fa --classified-out non_viral.fa --report report_no_viral --use-names "$trimmed_siRNA/$file.fastq"
+			kraken2 --threads 10 --db ${KRAKEN_DIR}/kraken_viral_db --unclassified-out potential_viral.fa --classified-out non_viral.fa --report report_no_viral --use-names "$trimmed_siRNA/$file.fastq"
+			cd ..
 		fi 
 	done
 
@@ -830,99 +850,7 @@ if [ "$siRNA" = true ]; then
 			fi
 		done
 	fi
+
 		
-########################################## Blast #############################################
-##############################################################################################
-
-mkdir ${DATA_DIR}/blast
-BLAST_DIR="${DATA_DIR}/blast"
-
-VIRUSDETECTDB_DIR="${DATABASES_DIR}/plant_239_U100"
-NR_DIR="${DATABASES_DIR}/nr"
-NT_DIR="${DATABASES_DIR}/nt"
-
-function myblastn ()
-{
-	blastn -query $1 \
-		  	-db $2 \
-		  	-out $3\
-		  	-num_threads 8 \
-		  	-evalue 0.01 \
-		  	-outfmt 6
-}
-
-function myblastx ()
-{
-	blastx -query $1 \
-			-db $2\
-			-out $3\
-			-num_threads 8 \
-			-evalue 0.01 \
-			-outfmt 6
-}
-
-cd BLAST_DIR
-
-cp -p ${VANA_DIR}/trimmed_cutadapt/SPAdes/contigs.fasta .
-cp -p ${SIRNA_DIR}/trimmed_cutadapt/SPAdes/compressed_SPAdes.fa .
-
-for FILE in $BLAST_DIR
-do
-  	#FILE="${FILEPATH##*/}"
-	FILENAME="${FILE%.*}"
-
-	UserChoice=0
-	while [[ $UserChoice != [12] ]]
-	do 
-		echo "---------------------------------"
-		printf "Which database you want to give to blast ? \n Please type :\n \"1\" for Virusdetect vrl_plant DB\n \"2\" for nr and nt DB\n \"3\" for both nrnt and virusdetect \n "
-	  	read -p 'Data to preprocess : ' UserChoice
-	  	if [[ $UserChoice == [qQ] ]]; then
-	    	break
-	  	fi
-	done
-
-	virusdetect=false
-	nrnt=false
-
-	case $UserChoice in 
-		1)
-		 	virusdetect=true
-		;;
-		2)
-		 	nrnt=true
-		;;
-		3)
-			virusdetect=true
-			nrnt=true
-		;;
-	esac
-
-
-	if [ "$virusdetect" = true ]
-	then
-		myblastn $FILEPATH ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100 ${FILENAME}_virusdetect_blastn.txt
-		myblastx $FILEPATH ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100_prot ${FILENAME}_virusdetect_blastx.txt
-
-		if [[ -s ${FILENAME}_virusdetect_blastn.txt ]]
-		then 
-			python3 ./blastn_virus_identity.py ${FILENAME}_virusdetect_blastn.txt $3 ${FILENAME}_virusdetect_blastn_taxon
-		fi
-		if [[ -s ${FILENAME}_virusdetect_blastx.txt ]]
-		then 
-			python3 ./blastx_virus_identify.py ${FILENAME}_virusdetect_blastx.txt $3 ${FILENAME}_virusdetect_blastx_taxon
-		fi
-	fi
-
-	if [ "$nrnt" = true ]
-	then
-		myblastn $FILEPATH ${DATABASES_DIR}/nr ${FILENAME}_nr_blastn.txt
-		myblastx $FILEPATH ${DATABASES_DIR}/nr ${FILENAME}_nt_blastx.txt
-		myblastn $FILEPATH ${DATABASES_DIR}/nt ${FILENAME}_nt_blastn.txt
-		myblastx $FILEPATH ${DATABASES_DIR}/nt ${FILENAME}_nt_blastx.txt
-	fi
-done
-
-
 conda deactivate
 echo "paleogenomic conda env OFF"
