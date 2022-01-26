@@ -382,19 +382,37 @@ if [ "$VANA" = true ]; then
 	  echo "Assembling $namefileR1 and $namefileR2 pair-end files..."
 	  
 	  # on fait le bbmap/repair
-	  bash ${BBMAP}/repair.sh in=$FILES_FA/$namefileR1.fastq in2=$FILES_FA/$namefileR2.fastq out1=$FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq out2=$FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq outs=$FILES_FA/$namefileR1/$namefileR1.unpaired.fastq
+	  bash ${BBMAP}/repair.sh \
+	  		 in=$FILES_FA/$namefileR1.fastq \
+	  		 in2=$FILES_FA/$namefileR2.fastq \
+	  		 out1=$FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq \
+	  		 out2=$FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq \
+	  		 outs=$FILES_FA/$namefileR1/$namefileR1.unpaired.fastq
 	  
 	  #SI $FILES_FA/$namefileR1/$namefileR1.unpaired.fastq est vide : spades va bugger 
-	  if [ -s $FILES_FA/$namefileR1/$namefileR1.unpaired.fastq ]; then
+	  if [ -s $FILES_FA/$namefileR1/$namefileR1.unpaired.fastq ]
+	  then
 		# lance spades : 
-		spades.py -o outputMETA/ -1 $FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq -2 $FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq -s $FILES_FA/$namefileR1/$namefileR1.unpaired.fastq --meta
+		spades.py -o outputMETA/ \
+							-1 $FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq \
+							-2 $FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq \ 
+							-s $FILES_FA/$namefileR1/$namefileR1.unpaired.fastq \
+							--meta
 	  else
-		spades.py -o outputMETA/ -1 $FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq -2 $FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq --meta
+		spades.py -o outputMETA/ \
+							-1 $FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq \
+							-2 $FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq \
+							--meta
 	  fi
 	  
 	  #pour idba_ud on merge 1 et 2 en un seul fichier sans les unpaired :
-	  fq2fa --merge $FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq $FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq $FILES_FA/$namefileR1/$namefileR1.mergedR1-R2.fastq
-	  idba_ud -r $FILES_FA/$namefileR1/$namefileR1.mergedR1-R2.fastq --num_threads 8 -o idba_ud_out
+	  fq2fa --merge $FILES_FA/$namefileR1/$namefileR1.repaired_R1.fastq \
+	  							$FILES_FA/$namefileR1/$namefileR2.repaired_R2.fastq \
+	  							$FILES_FA/$namefileR1/$namefileR1.mergedR1-R2.fastq
+
+	  idba_ud -r $FILES_FA/$namefileR1/$namefileR1.mergedR1-R2.fastq \
+	  				--num_threads 8 \
+	  				-o idba_ud_out
 
 	  done
 fi
@@ -473,38 +491,43 @@ function myblastx ()
 
 function virusdetect_blast ()
 {
-	FILENAME=$(basename $1 .fa)
+	echo "$1"
 
 	echo "Blastn on virusdetect vrl_plant DB"
-	myblastn $1 ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100 $FILENAME_virusdetect_blastn.txt
+	myblastn $1 ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100 $1_virusdetect_blastn.txt
 	echo "Blastx on virusdetect vrl_plant DB"
-	myblastx $1 ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100_prot $FILENAME_virusdetect_blastx.txt
+	myblastx $1 ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100_prot $1_virusdetect_blastx.txt
 
 	
-	if [[ -s $FILENAME_virusdetect_blastn.txt ]]
+	if [[ -s $1_virusdetect_blastn.txt ]]
 	then 
-		echo "Virus identification from blastn output with python3 scripts"
-		python3 ${SRC_DIR}/blastn_virus_identity.py $FILENAME_virusdetect_blastn.txt $3 $FILENAME_virusdetect_blastn_taxon
+		echo "Virus identification from blastn $1 with python3 scripts"
+		python3 ${SRC_DIR}/blastn_virus_identity.py \
+						$1_virusdetect_blastn.txt \
+						$VIRUSDETECTDB_DIR/ \
+						$1_virusdetect_blastn_taxon
 	fi
-	if [[ -s $FILENAME_virusdetect_blastx.txt ]]
+	if [[ -s $1_virusdetect_blastx.txt ]]
 	then 
-		echo "Virus identification from blastx output with python3 scripts"
-		python3 ${SRC_DIR}/blastx_virus_identify.py $FILENAME_virusdetect_blastx.txt $3 $FILENAME_virusdetect_blastx_taxon
+		echo "Virus identification from blastx $1 with python3 scripts"
+		python3 ${SRC_DIR}/blastx_virus_identity.py \
+						$1_virusdetect_blastx.txt \
+						$VIRUSDETECTDB_DIR/ \
+						$1_virusdetect_blastx_taxon
 	fi
 }
 
 function nrnt_blast ()
 {
-	FILENAME=$(basename $1 .fa)
 
 	echo "Blastn on nr DB"
-	myblastn $1 ${DATABASES_DIR}/nr $FILENAME_nr_blastn.txt
+	myblastn $1 ${DATABASES_DIR}/nr $1_nr_blastn.txt
 	echo "Blastx on nr DB"
-	myblastx $1 ${DATABASES_DIR}/nr $FILENAME_nt_blastx.txt
+	myblastx $1 ${DATABASES_DIR}/nr $1_nt_blastx.txt
 	echo "Blastn on nt DB"
-	myblastn $1 ${DATABASES_DIR}/nt $FILENAME_nt_blastn.txt
+	myblastn $1 ${DATABASES_DIR}/nt $1_nt_blastn.txt
 	echo "Blastx on nt DB"
-	myblastx $1 ${DATABASES_DIR}/nt $FILENAME_nt_blastx.txt
+	myblastx $1 ${DATABASES_DIR}/nt $1_nt_blastx.txt
 }
 
 
@@ -513,7 +536,7 @@ UserChoice=0
 while [[ $UserChoice != [123] ]]
 do
   echo "---------------------------------"
-  printf "Which data do you want to blast ? \n Please type :\n \"1\" for VANA\n \"2\" for siRNA\n \"3\" for both\n \"q\" to quit.\n"
+  printf "Which data do you want to assemble ? \n Please type :\n \"1\" for VANA\n \"2\" for siRNA\n \"3\" for both\n \"q\" to quit.\n"
   read -p 'Data to preprocess : ' UserChoice
   if [[ $UserChoice == [qQ] ]]; then
     break
@@ -549,13 +572,13 @@ then
 		cd $sample_dir
 		#echo "$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 		sample=$(basename $sample_dir)
-		echo "Copy the assembled siRNA $sample"
+		echo "Copy the SPAdes assembled siRNA $sample"
 		cd $sample_dir/SPAdes/ 
 		cp  -p ${sample}_novel_compressed_SPAdes.fa ${BLAST_DIR}/siRNA/
 	done
 
 	UserChoice=0
-	while [[ $UserChoice != [12] ]]
+	while [[ $UserChoice != [123] ]]
 	do 
 		echo "---------------------------------"
 		printf "Which database you want to give to blast your siRNA contigs ? \n Please type :\n \"1\" for Virusdetect vrl_plant DB\n \"2\" for nr and nt DB\n \"3\" for both nrnt and virusdetect \n "
@@ -598,12 +621,55 @@ fi
 
 if [ "$VANA" = true ]
 then
-	:
+	for sample_dir in ${VANA_DIR}/trimmed_cutadapt/*_trimmed
+	do
+		cd $sample_dir
+		echo "$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+		sample=$(basename $sample_dir)
+		echo "Copy the IDBA assembled VANA $sample"
+		cd $sample_dir/idba_ud_out/ 
+		cp  -p contig.fa ${BLAST_DIR}/VANA/${sample}_idba_ud_contigs.fa
+		echo "Copy the SPAdes META assembled VANA $sample"
+		cd $sample_dir/outputMETA/
+		cp  -p contigs.fasta ${BLAST_DIR}/VANA/${sample}_spades_meta_contigs.fasta
+	done
+
+	UserChoice=0
+	while [[ $UserChoice != [123] ]]
+	do 
+		echo "---------------------------------"
+		printf "Which database you want to give to blast your VANA contigs ? \n Please type :\n \"1\" for Virusdetect vrl_plant DB\n \"2\" for nr and nt DB\n \"3\" for both nrnt and virusdetect \n "
+	  	read -p 'Which reference database  : ' UserChoice
+	  	if [[ $UserChoice == [qQ] ]]
+	  	then
+	    	break
+	  	fi
+	done
+
+	virusdetect=false
+	nrnt=false
+
+	case $UserChoice in 
+		1)
+		 	virusdetect=true
+		;;
+		2)
+		 	nrnt=true
+		;;
+		3)
+			virusdetect=true
+			nrnt=true
+		;;
+	esac
+
+	if [ "$virusdetect" = true ]
+	then
+		for file in ${BLAST_DIR}/VANA/*.fa*
+		do
+			virusdetect_blast $file
+		done
+	fi
 fi
-
-
-conda deactivate
-echo "paleogenomic conda env OFF"
 
 conda deactivate
 echo "paleogenomic conda env OFF"

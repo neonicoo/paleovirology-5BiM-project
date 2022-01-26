@@ -46,4 +46,4 @@ for s in sidmapping:
     
 blastx.insert(2,'#subject_species', sname)
 blastx.insert(3,'#subject_genus', sgenus)
-blastx.to_csv("./"+str(output)+".txt", header=True, sep='\t')
+blastx.to_csv(str(output)+".txt", header=True, sep='\t')
