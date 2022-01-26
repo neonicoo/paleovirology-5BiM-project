@@ -493,27 +493,30 @@ function virusdetect_blast ()
 {
 	echo "$1"
 
+	outputn=${1/_trimmed/}_virusdetect_blastn.txt
+	outputx=${1/_trimmed/}_virusdetect_blastx.txt
+
 	echo "Blastn on virusdetect vrl_plant DB"
-	myblastn $1 ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100 $1_virusdetect_blastn.txt
+	myblastn $1 ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100 ${outputn}
 	echo "Blastx on virusdetect vrl_plant DB"
-	myblastx $1 ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100_prot $1_virusdetect_blastx.txt
+	myblastx $1 ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100_prot ${outputx}
 
 	
-	if [[ -s $1_virusdetect_blastn.txt ]]
+	if [[ -s ${outputn} ]]
 	then 
 		echo "Virus identification from blastn $1 with python3 scripts"
 		python3 ${SRC_DIR}/blastn_virus_identity.py \
-						$1_virusdetect_blastn.txt \
+						${outputn} \
 						$VIRUSDETECTDB_DIR/ \
-						$1_virusdetect_blastn_taxon
+						${outputn/_virusdetect_blastn.txt/}_virusdetect_blastn_taxon
 	fi
-	if [[ -s $1_virusdetect_blastx.txt ]]
+	if [[ -s ${outputx} ]]
 	then 
 		echo "Virus identification from blastx $1 with python3 scripts"
 		python3 ${SRC_DIR}/blastx_virus_identity.py \
-						$1_virusdetect_blastx.txt \
+						${outputx} \
 						$VIRUSDETECTDB_DIR/ \
-						$1_virusdetect_blastx_taxon
+						${outputx/_virusdetect_blastx.txt/}_virusdetect_blastx_taxon
 	fi
 }
 
