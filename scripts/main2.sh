@@ -404,7 +404,7 @@ if [ "$VANA" = true ]; then
 			mkdir no_viral
 			cd no_viral
 			#kraken
-			kraken2 --threads 10 --db ~/kraken_db/kraken2_no_viral_db --unclassified-out potential_viralR2.fa --classified-out non_viralR2.fa --report report_no_viralR2 --use-names "$trimmed_VANA/$file.fastq"
+			kraken2 --threads 10 --db ${KRAKEN_DIR}//kraken2_no_viral_db --unclassified-out potential_viralR2.fa --classified-out non_viralR2.fa --report report_no_viralR2 --use-names "$trimmed_VANA/$file.fastq"
 			cd ..
 		fi
 
@@ -413,7 +413,7 @@ if [ "$VANA" = true ]; then
 			mkdir plant
 			cd plant
 			#kraken
-			kraken2 --threads 10 --db ~/kraken_db/kraken2_plant --unclassified-out potential_viralR2.fa --classified-out plantR2.fa --report report_plantR2 --use-names ../no_viral/potential_viral.fa
+			kraken2 --threads 10 --db ${KRAKEN_DIR}//kraken2_plant --unclassified-out potential_viralR2.fa --classified-out plantR2.fa --report report_plantR2 --use-names ../no_viral/potential_viral.fa
 			cd ..
 		fi
 
@@ -422,7 +422,7 @@ if [ "$VANA" = true ]; then
 			mkdir viral
 			cd viral
 			#kraken
-			kraken2 --threads 10 --db ~/kraken_db/kraken2_no_viral_db --unclassified-out potential_viralR2.fa --classified-out non_viralR2.fa --report report_no_viralR2 --use-names "$trimmed_VANA/$file.fastq"
+			kraken2 --threads 10 --db ${KRAKEN_DIR}/kraken2_no_viral_db --unclassified-out potential_viralR2.fa --classified-out non_viralR2.fa --report report_no_viralR2 --use-names "$trimmed_VANA/$file.fastq"
 			cd ..
 		fi 
 	done
