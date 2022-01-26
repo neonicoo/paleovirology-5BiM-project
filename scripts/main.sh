@@ -15,7 +15,7 @@ DATABASES_DIR="${SCRIPT_DIR}/databases"
 BBMAP="${SCRIPT_DIR}/bbmap"
 KRAKEN_DIR="${SCRIPT_DIR}/kraken_db"
 BLAST_DIR="${DATA_DIR}/blast"
-SRC_DIR="$${SCRIPT_DIR}/src"
+SRC_DIR="${SCRIPT_DIR}/src"
 
 if [ -d ${BBMAP} ]
 then
@@ -539,7 +539,7 @@ UserChoice=0
 while [[ $UserChoice != [123] ]]
 do
   echo "---------------------------------"
-  printf "Which data do you want to assemble ? \n Please type :\n \"1\" for VANA\n \"2\" for siRNA\n \"3\" for both\n \"q\" to quit.\n"
+  printf "Which data do you want to blast? \n Please type :\n \"1\" for VANA\n \"2\" for siRNA\n \"3\" for both\n \"q\" to quit.\n"
   read -p 'Data to preprocess : ' UserChoice
   if [[ $UserChoice == [qQ] ]]; then
     break
