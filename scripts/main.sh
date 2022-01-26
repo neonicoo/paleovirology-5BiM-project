@@ -22,6 +22,7 @@ then
 	:
 else
 	tar -xzvf bbmap.tar.gz
+	rm -rf bbmap.tar.gz
 fi
 
 if [ -d ${DATABASES_DIR} ]
@@ -45,10 +46,9 @@ else
 	tar -xzvf plant_239_U100.tar.gz --strip-components=1
 
 	wget bioinfo.bti.cornell.edu/ftp/program/VirusDetect/virus_database/v239/vrl_genbank.info.gz
-	tar -xzvf vrl_genbank.info.gz --strip-components=1
+	gunzip vrl_genbank.info.gz 
 	wget bioinfo.bti.cornell.edu/ftp/program/VirusDetect/virus_database/v239/vrl_idmapping.gz
-	tar -xzvf vrl_idmapping.gz --strip-components=1
-	rm -rf plant_239_U100.tar.gz  vrl_genbank.info.gzvrl_idmapping.gz
+	gunzip vrl_idmapping.gz
 	cd ..
 fi
 
