@@ -16,6 +16,10 @@ BBMAP="${SCRIPT_DIR}/bbmap"
 KRAKEN_DIR="${SCRIPT_DIR}/kraken_db"
 BLAST_DIR="${DATA_DIR}/blast"
 SRC_DIR="${SCRIPT_DIR}/src"
+VIRUSDETECTDB_DIR="${DATABASES_DIR}/plant_239_U100"
+NR_DIR="${DATABASES_DIR}/nr"
+NT_DIR="${DATABASES_DIR}/nt"
+
 
 if [ -d ${BBMAP} ]
 then
@@ -34,9 +38,8 @@ fi
 
 cd databases
 
-if [ -d ${DATABASES_DIR}/plant_239_U100 ] 
+if [ -d $VIRUSDETECTDB_DIR ] 
 then
-    echo "$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
     :
 else
     mkdir plant_239_U100
@@ -50,6 +53,60 @@ else
 	wget bioinfo.bti.cornell.edu/ftp/program/VirusDetect/virus_database/v239/vrl_idmapping.gz
 	gunzip vrl_idmapping.gz
 	cd ..
+fi
+
+if [ -d $NR_DIR ] 
+then
+    :
+else
+    printf "NT database is missing, would you like to download it ? \n"
+    printf "This might take quite a few time\n"
+    
+    UserChoice=0
+	while [[ $UserChoice != [12] ]]
+	do
+	  echo "---------------------------------"
+	  printf "Please type : \n \"1\" for YES\n \"2\" for NO\n \"q\" to quit.\n"
+	  read -p 'Dowload NR DB for blast ? : ' UserChoice
+	  if [[ $UserChoice == [qQ] ]]; then
+	    break
+	  fi
+	done
+	if [[ $UserChoice == 1 ]]
+	then
+		mkdir $NR_DIR
+		cd $NR_DIR
+		update_blastdb nr
+	else
+		break
+	fi
+fi
+
+if [ -d $NT_DIR ] 
+then
+    :
+else
+    printf "NT database is missing, would you like to download it ? \n"
+    printf "This might take quite a few time\n"
+    
+    UserChoice=0
+	while [[ $UserChoice != [12] ]]
+	do
+	  echo "---------------------------------"
+	  printf "Please type : \n \"1\" for YES\n \"2\" for NO\n \"q\" to quit.\n"
+	  read -p 'Dowload NT DB for blast ? : ' UserChoice
+	  if [[ $UserChoice == [qQ] ]]; then
+	    break
+	  fi
+	done
+	if [[ $UserChoice == 1 ]]
+	then
+		mkdir $NT_DIR
+		cd $NT_DIR
+		update_blastdb nt
+	else
+		break
+	fi
 fi
 
 if conda env list | grep -q paleogenomic
@@ -468,29 +525,7 @@ else
 	echo "Created $BLAST_DIR"
 fi
 
-VIRUSDETECTDB_DIR="${DATABASES_DIR}/plant_239_U100"
-NR_DIR="${DATABASES_DIR}/nr"
-NT_DIR="${DATABASES_DIR}/nt"
 
-function myblastn ()
-{
-	blastn -query $1 \
-		  	-db $2 \
-		  	-out $3\
-		  	-num_threads 8 \
-		  	-evalue 0.01 \
-		  	-outfmt 6
-}
-
-function myblastx ()
-{
-	blastx -query $1 \
-			-db $2\
-			-out $3\
-			-num_threads 8 \
-			-evalue 0.01 \
-			-outfmt 6
-}
 
 function virusdetect_blast ()
 {
@@ -500,9 +535,20 @@ function virusdetect_blast ()
 	outputx=${1/_trimmed/}_virusdetect_blastx.txt
 
 	echo "Blastn on virusdetect vrl_plant DB"
-	myblastn $1 ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100 ${outputn}
+	blastn -query $1 \
+		  	-db ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100 \
+		  	-out ${outputn}\
+		  	-num_threads 8 \
+		  	-evalue 0.01 \
+		  	-outfmt 6
+
 	echo "Blastx on virusdetect vrl_plant DB"
-	myblastx $1 ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100_prot ${outputx}
+	blastx -query $1 \
+			-db ${VIRUSDETECTDB_DIR}/vrl_Plants_239_U100_prot\
+			-out ${outputx}\
+			-num_threads 8 \
+			-evalue 0.01 \
+			-outfmt 6
 
 	
 	if [[ -s ${outputn} ]]
@@ -526,14 +572,27 @@ function virusdetect_blast ()
 function nrnt_blast ()
 {
 
-	echo "Blastn on nr DB"
-	myblastn $1 ${DATABASES_DIR}/nr $1_nr_blastn.txt
+	outputn=${1/_trimmed/}_nt_result_blastn.txt
+	outputx=${1/_trimmed/}_nr_result_blastx.txt
+
 	echo "Blastx on nr DB"
-	myblastx $1 ${DATABASES_DIR}/nr $1_nt_blastx.txt
+	blastx -query $1 \
+			-db ${DATABASES_DIR}/nr \
+			-out $outputx \
+			-num_threads 12 \
+			-evalue 0.0001 \
+			-outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore staxids sscinames scomnames sskingdoms stitle" \
+			-max_target_seqs 2
+
 	echo "Blastn on nt DB"
-	myblastn $1 ${DATABASES_DIR}/nt $1_nt_blastn.txt
-	echo "Blastx on nt DB"
-	myblastx $1 ${DATABASES_DIR}/nt $1_nt_blastx.txt
+	blastn -query $1 \
+			-db ${DATABASES_DIR}/nt \
+			-out $outputn \
+			-num_threads 12 \
+			-evalue 0.0001 \
+			-outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore staxids sscinames scomnames sskingdoms stitle" \
+			-max_target_seqs 2
+	
 }
 
 
@@ -622,6 +681,15 @@ then
 		mv ${BLAST_DIR}/siRNA/*_virusdetect_blast{n,x}_taxon.txt ${BLAST_DIR}/siRNA/virusdetect_results
 		cat ${BLAST_DIR}/siRNA/virusdetect_results/*taxon.txt > vrl_plant_results_siRNA_all.txt
 	fi
+
+	if [ "$nrnt" = true ]
+	then
+		for file in ${BLAST_DIR}/siRNA/*.fa
+		do
+			nrnt_blast $file
+		done
+	fi
+
 fi
 
 
@@ -682,6 +750,14 @@ then
 		mkdir ${BLAST_DIR}/VANA/virusdetect_results
 		mv ${BLAST_DIR}/VANA/*_virusdetect_blast{n,x}_taxon.txt ${BLAST_DIR}/VANA/virusdetect_results
 		cat ${BLAST_DIR}/VANA/virusdetect_results/*taxon.txt > vrl_plant_results_VANA_all.txt
+	fi
+
+	if [ "$nrnt" = true ]
+	then
+		for file in ${BLAST_DIR}/VANA/*.fa
+		do
+			nrnt_blast $file
+		done
 	fi
 fi
 
