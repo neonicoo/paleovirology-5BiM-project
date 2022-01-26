@@ -255,7 +255,7 @@ while [[ $UserChoice != [123] ]]
 #jsp
 do
   echo " ---------------------------------"
-	printf "\n\n There are two methods to classify the data and select the potential viral reads.\n"
+	printf "\n There are two methods to classify the data and select the potential viral reads.\n"
   printf "  - You can choose to process by elimination, and delete all reads that aren't viral. \n"
   printf "    In this case, you can choose to eliminate every reads matching human, bacteria, archaea and fungi genomes [1]. \n And you can add a plant database to this process, and also delete every read matching plant genomes [2]. \n"
 	printf "  - Or you can choose to use kraken viral database and keep the reads that match the database. [3]\n"
@@ -304,7 +304,6 @@ case  $UserChoice in
 	;;
 esac
 
-printf "$elim1 $elim2 $map"
 UserChoice=0
 while [[ $UserChoice != [123] ]]
 do
@@ -420,9 +419,9 @@ if [ "$siRNA" = true ]; then
 	trimmed_siRNA="$siRNA_DIR/trimmed_cutadapt"
 	cd $trimmed_siRNA
 
-	for file in $trimmed_siRNA/*.fastq
+	for fileR1 in $trimmed_siRNA/*.fastq
 	do
-		fileR1=$(basename $file .fastq)
+		file=$(basename $fileR1 .fastq)
 		cd $trimmed_VANA/$file
 		mkdir filtered_reads_viral -p
 
