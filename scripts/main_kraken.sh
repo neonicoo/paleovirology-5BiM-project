@@ -987,6 +987,13 @@ function nrnt_blast ()
 			-evalue 0.0001 \
 			-outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore staxids sscinames scomnames sskingdoms stitle" \
 			-max_target_seqs 2
+			
+	# je fais un grep pour récupérer les blast que de "Viruses"
+  	grep -i "Viruses" $outputn.txt  > viruses_BlastN.txt
+	# je récupère les identifiants des contigs de virus
+  	cut -f1 viruses_BlastN.txt > virus_ID_BlastN.txt
+	# on ne garde dans le .fasta que les contigs identifiés comme virus : 
+  	grep -f virus_ID_BlastN.txt -i $1 -A 1 > viruses_contigs_BlastN.fasta
 	
 }
 
